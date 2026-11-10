@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="術科考場">
+<meta name="theme-color" content="#ffffff">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>術科模擬考場</title>
+<style>
+/* 版面：手機單欄；平板橫放＝左說明右畫板；桌機寬螢幕＝考場三欄 */
+:root{--bg:#ffffff;--card:#ffffff;--ink:#1a1a1a;--mut:#6b6b6b;--line:#d4d4d4;--acc:#1a1a1a;--accbg:#efefef;--bad:#b3261e;--badbg:#fbe4e1;--ok:#256b3a;--okbg:#e0f1e4;--warn:#8a5a00;--warnbg:#fbefd2;--paper:#ffffff;color-scheme:light}
+*{box-sizing:border-box}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+.pad{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button{-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Microsoft JhengHei","PingFang TC",sans-serif}
+header{display:flex;align-items:center;gap:12px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--card)}
+header h1{font-size:18px;margin:0;color:var(--acc)}
+header .sp{flex:1}
+button{font:inherit;padding:6px 14px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:700}
+button.big{font-size:18px;padding:10px 22px}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input,select,textarea{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+input[type=number]{width:92px}
+textarea{width:100%;min-height:64px}
+main{padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1700px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 8px;color:var(--acc)}
+.card h3{font-size:14px;margin:12px 0 4px;color:var(--mut)}
+.mut{color:var(--mut)}.small{font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2{display:grid;grid-template-columns:minmax(320px,1fr) minmax(320px,1fr);gap:14px}
+.exam{display:grid;grid-template-columns:minmax(300px,1.1fr) minmax(330px,1fr) minmax(330px,1.1fr);gap:14px;align-items:start}
+@media (max-width:1100px){.exam,.grid2{grid-template-columns:1fr}}
+.qlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.q{text-align:left;padding:8px 10px}
+.q b{color:var(--acc)}
+.tag{display:inline-block;font-size:12px;padding:0 7px;border-radius:10px;background:var(--accbg);color:var(--acc);margin-right:4px}
+.tag.bad{background:var(--badbg);color:var(--bad)}.tag.ok{background:var(--okbg);color:var(--ok)}.tag.warn{background:var(--warnbg);color:var(--warn)}
+.clock{font:700 64px/1 Consolas,monospace;text-align:center;letter-spacing:2px;margin:6px 0}
+.clock.over{color:var(--bad)}
+.sub{text-align:center;color:var(--mut)}
+.ph{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:6px;border:1px solid transparent}
+.ph.cur{background:var(--accbg);border-color:var(--acc);font-weight:700}
+.ph.done{color:var(--mut)}
+.ph .n{flex:1}.ph .t{font-family:Consolas,monospace;font-size:13px}
+.late{color:var(--bad)}.early{color:var(--ok)}
+ul.tight{margin:4px 0;padding-left:20px}
+label.chk{display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer}
+label.chk input{margin-top:6px}
+table{border-collapse:collapse;width:100%}
+td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:400;font-size:13px}
+td.num{text-align:right;font-family:Consolas,monospace}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center}
+.out{background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:8px}
+.out b{font-family:Consolas,monospace}
+.flash{animation:fl 1s 3}
+@keyframes fl{50%{background:var(--badbg)}}
+.hide{display:none!important}
+.narrow{max-width:600px;margin:0 auto}
+.col{display:flex;flex-direction:column;gap:8px}
+.energy{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:14px 16px;border-radius:10px}
+.energy b{font-size:19px;color:var(--acc)}.energy span{color:var(--mut);font-size:14px}
+.opt{text-align:left;padding:10px 14px}
+button:disabled{opacity:.45;cursor:default}
+.dots{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;margin:10px 0}
+.dots i{aspect-ratio:1;border-radius:4px;background:var(--line)}.dots i.on{background:var(--acc)}
+.shot{width:100%;border-radius:8px;border:1px solid var(--line);display:block}
+a{color:var(--acc)}
+.narrow.wide{max-width:980px}
+.energy.on b,.energy.on span{color:var(--bg)}
+.qv summary{cursor:pointer;color:var(--acc);padding:8px 0;font-weight:700}
+.qv img{width:100%;display:block;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;background:#fff;cursor:zoom-in}
+.ovl{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.ovl .dl{max-width:520px;width:100%;margin:0}
+.ovl.zoom{align-items:flex-start;background:rgba(0,0,0,.85);cursor:zoom-out}
+.ovl.zoom img{width:min(1500px,180%);max-width:none;background:#fff;border-radius:6px}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (pointer:coarse){button,input,select{min-height:44px}label.chk input{width:22px;height:22px;min-height:0;margin-top:2px}label.chk{padding:6px 0}}
+@media (max-width:640px){header{gap:6px}header h1{font-size:15px}.clock{font-size:48px}}
+/* ===== 畫板：平板是固定版面（不捲動），工具列在畫布左側，畫布吃滿剩下的空間 ===== */
+.work{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.work>*{min-width:0}
+.padwrap{display:flex;flex-direction:column;gap:8px;padding:8px;margin:0;min-height:0;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.padwrap button{touch-action:manipulation}
+.pad{flex:1 1 auto;width:100%;min-width:0;min-height:0;height:58vh;height:58dvh;background:var(--paper);border:1px solid var(--line);border-radius:8px;touch-action:none;display:block;cursor:crosshair}
+.padbar{display:flex;gap:5px;align-items:center;flex:none;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:2px}
+.padbar button{flex:none;width:50px;height:44px;min-width:0;min-height:0;padding:0;font-size:13px;line-height:1.1}
+.padbar hr{flex:none;width:1px;height:30px;border:0;background:var(--line);margin:0 2px}
+.padbar .seg{display:flex;gap:3px;flex:none}
+.padbar .seg button{width:34px}
+.sz{display:inline-flex;align-items:center;justify-content:center}.sz i{display:block;width:20px;background:var(--ink);border-radius:3px}
+.sz.on i{background:var(--bg)}
+.sw{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px}
+.sw i{width:18px;height:18px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.25)}
+.sw.on{background:var(--card);color:var(--ink);border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink);font-weight:700}
+.padt{flex:none;font:700 17px/1 Consolas,monospace;text-align:center;min-width:50px}
+.padt:empty{display:none}
+.padwrap.full{position:fixed;inset:0;z-index:40;background:var(--card);border:0;border-radius:0;padding:max(8px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.padwrap.full .pad{height:auto}
+@media (min-width:700px){
+ body.drawing{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+ body.drawing header{flex:none;position:static}
+ body.drawing main{flex:1 1 auto;min-height:0;width:100%;padding-block:10px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px))}
+ body.drawing .work{height:100%;grid-template-columns:minmax(250px,320px) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+ body.drawing .work>div:first-child{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
+ body.drawing .padwrap,.padwrap.full{flex-direction:row}
+ body.drawing .pad,.padwrap.full .pad{height:auto;align-self:stretch}
+ body.drawing .padbar,.padwrap.full .padbar{display:grid;grid-template-columns:50px 50px;align-content:start;justify-content:start;gap:5px;overflow-x:hidden;overflow-y:auto;padding:0 2px 0 0}
+ body.drawing .padbar .wide,.padwrap.full .padbar .wide{grid-column:1/-1;width:auto}
+ body.drawing .padbar hr,.padwrap.full .padbar hr{grid-column:1/-1;width:100%;height:1px;margin:1px 0}
+ body.drawing .padbar .seg,.padwrap.full .padbar .seg{grid-column:1/-1}
+ body.drawing .padbar .seg button,.padwrap.full .padbar .seg button{flex:1;width:auto}
+}
+/* 平板直放：題目在上、畫板在下吃滿寬度 */
+@media (min-width:700px) and (orientation:portrait){
+ body.drawing .work{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+ body.drawing .work>div:first-child{max-height:32vh}
+}
+</style>
+<style>body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overscroll-behavior:none}</style>
+</head>
+<body>
+<header>
+  <h1>術科模擬考場</h1>
+  <span class="sp"></span>
+  <button id="navTonight">今晚</button><button id="navHome">週末考場</button><button id="navHist">紀錄</button>
+</header>
+<main id="app"></main>
+<script>
+"use strict";
+/* ---------- 題庫（依資料夾內 100–113 年正式試題整理；數字以原題 PDF 為準） ---------- */
+const COMMON=['圖名、比例、指北針、尺寸與空間名稱標註','空間定性定量表／面積計算','建築計畫或設計說明文字'];
+const Q=[
+{id:'113',y:113,t:'長者日間照顧中心＋住宅／就業輔導',pdf:'113190_80160.pdf',calc:false,area:null,bcr:60,far:210,score:'建築計畫 30／建築設計 70',
+ site:'南部老舊住宅區，地勢平緩，四周 2–4 層；北邊 36m、南邊 46m、西邊 60m、東側下段 24m（東界有折線與截角，題目未給面積；以梯形粗估上限約 2460㎡，請依附圖自行手算）；西 15m、北東南各 8m 道路；西鄰公園、西南 430m 中學、東北 150m 市場，巷弄汽機車混停。第五種住宅區。',
+ hard:['日照同時最多 60 人，單元照顧 10–15 人；每 30 人須固定隔間及獨立空間；總樓地板每人 ≥6.6㎡（60 人至少 396㎡）、日常活動場所每人 ≥4㎡（至少 240㎡）','休憩設備不得設於地下樓層；群體午休區＋二人型獨立午休（最多 16 人）；行政辦公 12 人','浴廁至少：女廁馬桶8洗手台4；男廁馬桶4小便斗4洗手台4；無障礙廁所及淋浴間 馬桶4洗手台4淋浴4','商業性質店鋪 ≤500㎡、其中飲食性質 ≤300㎡；集合住宅與店鋪只需設計量體，不必畫單元內隔間','停車：H1 每150㎡ 1汽車、每100㎡ 1機車；G2/G3 每150㎡ 1汽車、每50㎡ 1機車；須有卸貨臨停','（建議，非原題文字）接送臨停不占用巷弄；住宅／訓練／日照入口與核心分流'],
+ prog:[['諮詢洽談室（每間約）',12],['社區交誼空間',120],['社區關懷據點（至少）',30],['照服職能訓練及就業輔導工作坊（共約）',600]],
+ draw:['配置圖 1/400（開放空間、退縮或騎樓、無障礙通路、量體、景觀）','各層平面圖 1/300（標比例尺或尺寸、服務核）','全區長短向剖面圖 1/300（標樓高）','重點空間平、剖面圖 1/50–1/100','主要立面圖（比例不限，建材質感）','透視圖']},
+{id:'112',y:112,t:'小學附設幼兒園（全校改建）',pdf:'112190_80160.pdf',calc:true,area:22000,bcr:40,far:120,score:'建築計畫 30／建築設計 70',
+ site:'南部傳統閩南農村聚落（都市計畫外），22000㎡；北 12m、西 18m、東 6m 道路，南鄰農地；保留既有 2 層活動中心（約 30.4m×44m）；聚落集中西、北側；冬季東北季風、夏季強日照與西南風。',
+ hard:['西、北、東側人行道 3.5m＋牆面退縮 3.5m，共退 7m','建議至少 20 汽車＋1 無障礙汽車位，另設機車、自行車若干；接送不得影響外部交通','200m 操場 1 座、籃球場 1 座','校園須對社區開放、教室資源供終身學習；符合步行距離與無障礙法規','（建議，非原題文字）接送車流不切入學生活動區；社區使用與教室區分區管理'],
+ prog:[['普通教室 60㎡×12（每間25人）',720],['幼兒活動室 90㎡×2（每間30人）',180],['專科教室 90㎡×3',270],['圖書室',180],['保健室',60],['校長室',60],['教師辦公室',180],['會議室',30],['檔案、儲藏室',60]],
+ draw:['校園配置圖 1/500–1/1000（含景觀、鋪面植栽）','各層校舍平面圖 1/200（標重要尺寸）','教室單元詳圖 1/30–1/50（含家具設備、標尺寸）','主要立面圖 1/100–1/200（標材質、尺寸）','重要剖面圖 1/100–1/200（標材質、尺寸）','重要角度透視圖（比例自訂）']},
+{id:'111',y:111,t:'市場複合社區福祉會館',pdf:'111180_80160.pdf',calc:false,area:2970,areaEst:true,bcr:50,far:240,score:'建築計畫 30／建築設計 70',
+ site:'梯形基地：北邊 38m、南邊 61m、深 60m，約 2970㎡（(38+61)/2×60，未扣截角）；零售市場用地；北 6m、西 8m、南 15m 道路；東南高、西北低最多 2m；南側國中，北、東側住宅區。',
+ hard:['臨 10m 以下道路須退縮補足 10m 後建築：北側退 4m、西側退 2m（退縮地可計容積、不計法定空地）','2m 高差須處理無障礙通路；須設汽機車停車、卸貨臨停、自行車停車、半戶外通廊或陽台','附設停車空間以改善鄰近社區停車不足','未給面積之空間與可出租單元須自擬需求量','（建議，非原題文字）顧客、貨車、廢棄物動線不交叉；南側 15m 上學時段不作貨車主出入口；健康中心可夜間獨立開放'],
+ prog:[['超級市場展售區',900],['線上購物提取區',30],['物流處理區',210],['接待及健康講座',120],['治療所／檢驗／接種',480],['社區健檢／癌篩及等候',600],['健康促進活動空間',240],['交誼廳暨圖書閱覽',240],['學習中心暨關懷據點',900],['共享食堂（含烹調）',240],['多功能集會',240]],
+ draw:['地面層平面圖 1/300（室內外層次、法定退縮、無障礙通路、景觀、重要尺寸）','各層平面圖 1/300（標比例尺或柱心距）','剖面圖 1/200–1/300（標樓高）','主要立面圖（比例不限；建材、陰影）','透視圖']},
+{id:'110',y:110,t:'社區活動中心＋公有出租套房',pdf:'110180_80160.pdf',calc:false,area:1744,bcr:55,far:275,score:'建築計畫 30／圖面 70',
+ site:'1744㎡（北側商業區 1024㎡＝32×32m、南側住宅區 720㎡＝30×24m）；北 18m 主要零售街、南 10m 道路對面為國中，南側鄰屋多退縮 3m；基地內有受保護榕樹（樹冠直徑約 10m、樹高 15m，位置看原題附圖）。',
+ hard:['須設計至容積上限，並在圖上列算式算出最大容積樓地板與最大建築面積（先手算，再用右側對答案）','地下汽車 35 席、須有坡道；免設機車位','套房單元數盡量多，每戶約 30㎡；自然採光、私密、陽台曬衣、簡易廚房（電爐）、淋浴無浴缸','榕樹保護；社區客廳 10–21 時開放；公共（夜間週末出租教室）與住戶動線分流'],
+ prog:[['社區客廳',480],['教室／會議',680],['里辦公處',200],['儲藏',200]],
+ draw:['地面層平面圖 1/200（柱中心線、柱距）','各層平面圖 1/200（柱中心線、柱距）','兩向剖面圖 1/200（柱中心線、柱距、樓高）','外牆剖面圖 1/50（樓高、梁深、淨高）','量體簡圖（臨街道、樓層線、服務核位置）','立面設計策略簡圖（比例自訂）']},
+{id:'109',y:109,t:'大學校園學生宿舍',pdf:'109180_80160.pdf',calc:true,area:3240,bcr:40,far:120,floors:4,score:'建築計畫 30／圖面 70',
+ site:'72m × 45m、3240㎡、平坦；北側隔宿舍區道路為 40 年宿舍，南側便利商店／醫務室；西側校園雙向道路；道路寬與入口位置看原題附圖。',
+ hard:['至少 200 名住宿學生、至少兩種房型、不限性別、含行動不便者','地上不得超過 4 層','自行車 200 部；不設汽車停車','多功能集會空間約 200㎡，演講時觀眾區至少 120 人','足量直通樓梯與安全梯（安全梯依無障礙設施設計規範），檢討各點至安全梯步行距離'],
+ prog:[['多功能集會空間',200]],
+ draw:['配置圖 1/500（含戶外景觀、腳踏車場）','地面層平面圖 1/200（柱中心線、柱距、柱尺寸）','各層平面圖 1/200（柱中心線、柱距、柱尺寸）','外牆剖面圖 1/50（樓高、樑深、淨高）','標準單元平面詳圖兩式 1/50（家具、通道寬）','樓電梯間平面詳圖 1/50（電梯車廂與開口尺寸；梯級數、級高、級深須與樓高吻合）','外觀透視圖']},
+{id:'108',y:108,t:'國小閒置教室「老小共學」校舍增改建',pdf:'108180_80160.pdf',calc:false,area:3180,areaEst:true,bcr:60,far:null,floors:3,score:'建築計畫 30／建築設計 70',
+ site:'國小校園臨街區，基地約 60m×53m（約 3180㎡，含既有校舍）；南 20m 道路、西 8m 巷道，圍牆外 4m 人行道；既有 3 層 RC 校舍西翼＋西、北、南各 20m 空地；北側距其他校舍僅 30m。',
+ hard:['基地範圍建蔽率上限 60%，樓層以 3 樓為原則','日照 20 人：活動空間每人 10㎡、午休寢室每人 5㎡','銀髮學習中心：約 50 人共餐空間、教室 2 間、會議室 20 席、福利與醫療諮詢室','符合無障礙設施設計規範；接送上下車、送餐車裝載與停車','挑高 2 樓川堂不可變動，西翼其餘可改造；與學童活動融合，注意鄰棟間隔'],
+ prog:[['日照活動空間 10㎡×20',200],['午休寢室 5㎡×20',100]],
+ draw:['全區地面層配置圖 1/200–1/300（含景觀）','重要其他樓層平面圖 1/200','主要立面圖至少兩向 1/200','主要剖面圖至少一向 1/200','透視圖或大樣圖','無障礙環境系統性概念說明']},
+{id:'107',y:107,t:'國民運動中心',pdf:'107180_80160.pdf',calc:true,area:6500,bcr:40,far:80,score:'建築計畫 30／建築設計 70',
+ site:'南部中小型市鎮，地勢平坦，約 6500㎡（約 108.5m × 60m）；文教區；周邊道路寬看原題附圖；東鄰國中（有戶外泳池）、西南為 2–3 層透天店鋪住宅、北側為鎮立圖書館。',
+ hard:['室內球場至少容納標準籃球場 15m×28m 及緩衝空間','停車設於法定空地且可供假日市集：汽車 24、無障礙 2、機車 50','少雨、日照時數長，須有遮陽對策','OT 委外經營；配置呼應周邊街區屬性'],
+ prog:[['重量訓練室（350–400）',375],['多功能大教室（350–400）',375],['韻律教室 65–75㎡×4',280],['室內球場（自估含緩衝，非題目數字；題目僅給球場 15×28＝420）',800]],
+ draw:['配置平面圖 1/600（含戶外景觀）','各層平面圖 1/300','雙向剖面圖 1/200','主要立面圖 1/200','主要空間外牆剖面圖（比例自訂）','透視圖']},
+{id:'106',y:106,t:'老街活動中心',pdf:'106180_80160.pdf',calc:true,area:850.39,bcr:60,far:180,
+ site:'850.39㎡，深 50.8m、面寬 16.74m；住宅區；東西兩側皆臨 8m 道路；西對鐵皮傳統市場（老街主入口側）、東對土地公廟；1920 年代紅磚、白／灰洗石子連續立面（舊立面圖標高 2.11／5.93／3.82／5.58m）；基地東端有既有大樹；現為空地，居民在廟前廣場、道路及部分基地做晨間舞蹈與太極拳。',
+ hard:['130 人以上室內多功能集會空間＋辦公室','圖書閱覽室及附屬空間','汽車 2 部、機車位、身心障礙者專用車位','重新連接中斷的老街連續立面（量體、材料、顏色）','市場、土地公廟、活動中心三者關係','基地圖標示既有大樹（東端，建議保留）'],
+ prog:[],draw:['配置圖（範圍含市場及土地公廟入口區）','平面圖（含傢具配置）','兩向立面圖（需上色）','東西向剖面圖','透視圖（街道行人視線高度）'],score:'人文自然 35／法規 30／創意合理 35'},
+{id:'105',y:105,t:'圖書館與社區公共空間',pdf:'105170_80160.pdf',calc:true,area:4260,bcr:40,far:100,
+ score:'建築計畫 30／建築設計 70',
+ site:'老舊住宅區（原私校用地），總面積約 5680㎡，其中公園 1/4、建築用地 3/4（約 4260㎡，區位與界線自訂）；不規則形；南臨街道（有車輛噪音）、北臨巷道，路寬與邊長請看原題基地圖；其餘為老舊集合住宅，東南側緊鄰幼兒園；常年東風；基地內有現有喬木。',
+ hard:['容積使用 90%–100%（約 3834–4260㎡），圖書館不少於總使用容積 70%','出租商店：二手書店、簡餐咖啡、超商','臨街退縮 4m 人行道，其他臨地界線退縮 3m','地下停車：汽車 20、機車 40、行動不便 2；地面公共自行車 20','戶外空間列舉五種使用方式（含幼兒園戶外活動、週末跳蚤市場）','儘量保留現有喬木','計畫書不超過 1500 字'],
+ prog:[],draw:['配置圖 1/400（含景觀及周邊環境）','全區剖面圖 1/400','各層平面圖 1/200','雙向剖面圖 1/200','主要立面圖 1/200','外牆剖面圖','全區透視圖','局部書架與閱讀區平面（標尺寸）']},
+{id:'104',y:104,t:'【友善】社區小學（高齡者學習空間）',pdf:'104170_80160.pdf',calc:true,area:6600,bcr:40,far:120,
+ score:'建築計畫 30／建築設計 70',
+ site:'國小校地內 A 基地 5400㎡（50×108m）＋ B 基地 1200㎡（30×40m），位置與周邊路寬請看原題基地圖；四周道路各退縮 3.5m 人行道；西側車流噪音；冬季東北季風、夏季西南季風。',
+ hard:['兩基地各自符合建蔽 40%、容積 120%（A：建築面積 2160／容積 6480㎡；B：480／1440㎡，不可互相流用；右側計算機的 6600㎡ 只是合計）','建築高度不得大於兩幢外牆中心線水平距離 1.5 倍','高齡者獨立大門＋60 輛自行車位','與國小可獨立管理又能交流','使用者以 600m 內步行高齡者為主'],
+ prog:[],draw:['全區配置圖 1/600（含國小量體、A/B 量體、景觀）','A、B 各層平面圖 1/300','A、B 四向立面圖 1/300','主要剖面圖 1/300','透視圖','無障礙系統性概念說明']},
+{id:'103',y:103,t:'與鄰為善的建築師事務所',pdf:'103170_80160.pdf',calc:true,area:1410,bcr:50,far:200,
+ score:'建築計畫 30／建築設計 70',
+ site:'約 1410㎡（47×30m，截角 3m）；基地內有朝西 2 層 RC 舊宿舍可再利用，基地圖另標有老樹（位置尺寸看原題附圖）；南鄰 1600 坪社區公園、北為 6m 道路與小學（4m 通學步道、側門）、西 8m 道路（退縮 2m 牆面線）、東鄰 7 樓集合住宅（底層店舖、4m 沿街步道）。',
+ hard:['事務所 6 人；向社區開放的公共／半公共空間','舊建築再利用（新舊共構、改造、增建）','基地內不設汽機車位（小學地下室可停車）','通學步道與公園的連結'],
+ prog:[],draw:['設計概念圖','基地配置圖','地面層及庭園平面圖（含傢俱）','主要立面圖至少兩向','主要剖面圖至少一向','其他各層平面圖（含傢俱）','新舊構造界面細部圖','透視圖或等角圖']},
+{id:'102',y:102,t:'都市填充—住商複合使用建築',pdf:'102180_80160.pdf',calc:true,area:1116,bcr:45,far:225,
+ score:'建築計畫 30／建築設計 70',
+ site:'1116㎡，住三；南北兩側為巷道（路寬看原題附圖；臨 8m 以上道路底層才可設店）、東臨社區公園（公園外為街道）、西為日式歷史住宅（文學紀念館）。',
+ hard:['容積使用不少於法定 80%、不可超過（約 2009–2511㎡）','單身套房 25–30㎡ 與家庭 2 房 60–70㎡，數量各半','機車 20、汽車 10','地面層商店；計畫書不超過 1500 字','紀念館戶外空間可與基地整體規劃並對外開放','無障礙及綠色生態建築環境'],
+ prog:[],draw:['配置圖 1/300（含景觀）','地面層及重要樓層平面圖 1/200','主要立面圖 1/200','雙向剖面圖 1/200','全區透視或等角圖','構造細部詳圖']},
+{id:'101',y:101,t:'歷史建築保存再利用與活動中心增建',pdf:'101180_80160.pdf',calc:true,area:3000,bcr:60,far:200,
+ site:'舊市區公共設施用地 3000㎡；基地 +2m、臨小溪（-5m）；有 1930 年代歷史建築與老樹須保留。',
+ score:'建築計畫 30／建築設計 70',
+ hard:['建蔽 60%（含歷史建築）、開挖率 70%','增建面積上限 1200㎡（含地下室）','150 人多功能集會空間；小汽車 20 部','歷史建築與老樹保留（長向兩側柱間窗牆門可適當改變）','計畫書須含執行計畫（監造重點）'],
+ prog:[],draw:['配置圖 1/400（含景觀）','平面圖 1/200','主要立面圖 1/200','剖面圖 1/200（至少二向）','透視圖','新舊構築細部圖']},
+{id:'100',y:100,t:'共生的兒童圖書館與鄰里公園',pdf:'100230_80160.pdf',calc:true,area:4225,bcr:40,far:120,
+ site:'65×65m 住宅區基地；西鄰鄰里公園（35×65m）；東 12m、南北各 8m 道路。',
+ hard:['沿街面皆留設 3.5m 騎樓地','空間以總樓地板比例給定：閱覽 1/5、遊戲 1/10、展演 3/20、研習 3/20、行政 1/10、其他 3/10','地下法定停車','鄰里公園納入學習環境'],
+ prog:[],draw:['配置圖 1/300','各層平面圖 1/200','主要剖面圖 1/200','各向立面圖 1/200','特殊構造細部詳圖','空間構想與造型圖']}
+];
+/* ---------- 配速表（分鐘，可在選題頁改） ---------- */
+const MODES={
+ full:{n:'大設計 全程 8 小時',p:[['讀題、圈硬限制',20],['手算量體與面積表',20],['分析圖＋A/B 方案定案',40],['草配：配置與各層分區',60],['上板：配置圖＋地面層',100],['其他各層平面',60],['剖面、立面',60],['透視／量體圖',45],['計畫文字、面積表、標註',45],['總檢核',30]]},
+ site:{n:'敷地 全程 4 小時',p:[['讀題、圈硬限制',15],['基地分析與議題',25],['配置草案定案',35],['上板：全區配置圖',80],['剖面與重點區放大',35],['圖解、說明文字、標註',35],['總檢核',15]]},
+ front:{n:'前段決策 90 分鐘',d:['三條硬限制寫成句子','手算量體與面積表（建築面積、容積樓地板、樓層數）','四格分析圖（基地／使用者／服務動線／環境剖面）','A/B 兩張獨立縮圖＋一句取捨','草配：配置＋地面層（入口、分區、主動線、核心）','回查：硬限制逐條在圖上指認'],p:[['讀題、圈硬限制',10],['手算量體與面積表',10],['四格分析圖',20],['A/B 方案比較並選定',15],['草配定案（配置＋地面層）',25],['回查限制',10]]},
+ quick:{n:'快速決策 30 分鐘',d:['三條硬限制＋概略面積／樓層判斷','四張問題點分析圖','A/B 兩張獨立縮圖＋一句取捨','成果小圖（入口、分區、主動線、核心）','驗證：面積／法規核對與主圖標註'],p:[['讀題與限制圈選',5],['四張問題點分析圖',8],['A/B 方案',4],['成果小圖',8],['驗證與標註',5]]}
+};
+const RUBRIC=[['題意覆蓋','硬限制、面積、法規在圖上可指認'],['動線主從','人／車／服務、動／靜關係可讀'],['主圖可讀性','入口、尺寸、箭頭、關鍵註記完整']];
+const REDLINE=['建蔽率、容積率未超過（有算式）','法定退縮／騎樓／人行道有留','停車數量與車道合理','無障礙通路、電梯、廁所連續','樓梯數量與避難距離合理','柱位／結構系統前後一致','每張圖都有圖名與比例'];
+/* ---------- 儲存 ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const K={cfg:'sk-cfg-v1',hist:'sk-hist-v1',act:'sk-active-v1',cus:'sk-custom-v1'};
+let cfg=LS.get(K.cfg,{mode:'full',plans:{}});
+let act=LS.get(K.act,null);
+let tick=null,beeped=-1;
+const $=s=>document.querySelector(s);
+const app=$('#app');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=s=>{const n=s<0;s=Math.abs(Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (n?'-':'')+(h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(x).padStart(2,'0')};
+const num=(v,d=0)=>v==null||isNaN(v)?'—':Number(v).toLocaleString('zh-TW',{maximumFractionDigits:d});
+function dlg(msg,opt){opt=opt||{};const o=document.createElement('div');o.className='ovl';
+ o.innerHTML=`<div class="card dl"><p>${esc(msg)}</p>${opt.input!=null?`<input id="dlIn" type="${opt.type||'text'}" style="width:100%" value="${esc(opt.input)}">`:''}${opt.area!=null?`<textarea id="dlTa" style="min-height:180px">${esc(opt.area)}</textarea>`:''}<div class="row" style="margin-top:12px;justify-content:flex-end">${opt.copy?'<button id="dlCp">複製</button>':''}${opt.ok?'<button id="dlNo">取消</button>':''}<button class="pri" id="dlYes">${esc(opt.yes||'好')}</button></div></div>`;
+ document.body.appendChild(o);const q=x=>o.querySelector(x);
+ q('#dlYes').onclick=()=>{const v=q('#dlIn')?q('#dlIn').value:q('#dlTa')?q('#dlTa').value:true;o.remove();opt.ok&&opt.ok(v)};
+ if(q('#dlNo'))q('#dlNo').onclick=()=>o.remove();
+ if(q('#dlCp'))q('#dlCp').onclick=()=>{const t=q('#dlTa');t.select();try{navigator.clipboard.writeText(t.value).then(()=>{q('#dlCp').textContent='已複製'},()=>{})}catch(e){}}}
+const PAGES={100:2,101:4,102:3,103:7,104:4,105:3,106:3,107:3,108:3,109:3,110:3,111:3,112:3,113:5};
+const QDIR='q/',LOCAL=location.protocol==='file:';
+function qview(q,open){const n=PAGES[q.id];if(!n)return q.pdf&&LOCAL?`<p><a href="題目pdf/${esc(q.pdf)}" target="_blank">開啟原題 PDF</a></p>`:'';
+ let h='';for(let i=1;i<=n;i++)h+=`<img loading="lazy" src="${QDIR}${q.id}-${i}.jpg" alt="${q.id} 年原題第 ${i} 頁">`;
+ return `<details class="qv" ${open?'open':''}><summary>看原題（${n} 頁，點圖放大）</summary>${h}</details>`}
+document.addEventListener('click',e=>{const t=e.target;if(t.closest&&t.closest('.ovl.zoom')){t.closest('.ovl.zoom').remove();return}
+ if(t.tagName==='IMG'&&t.closest('.qv,.zoomable')){const o=document.createElement('div');o.className='ovl zoom';const i=document.createElement('img');i.src=t.src;i.alt=t.alt;o.appendChild(i);document.body.appendChild(o)}});
+function allQ(){return Q.concat(LS.get(K.cus,[]))}
+function findQ(id){return allQ().find(q=>q.id===id)}
+function plan(mode){const base=MODES[mode].p,ov=cfg.plans[mode];return base.map((p,i)=>[p[0],ov&&ov[i]>0?ov[i]:p[1]])}
+/* ---------- 選題頁 ---------- */
+function home(){
+ stopTick();stopCd();clearDraw();
+ const m=cfg.mode,pl=plan(m),tot=pl.reduce((a,p)=>a+p[1],0);
+ const hist=LS.get(K.hist,[]);const doneIds=new Set(hist.map(h=>h.qid));
+ app.innerHTML=`
+ ${act?`<div class="card"><b>有一場尚未交卷：</b>${esc(act.title)}（${esc(MODES[act.mode].n)}）　<button class="pri" id="resume">回到考場</button> <button id="drop">放棄這場</button></div>`:''}
+ <div class="grid2">
+ <div class="card"><h2>1　選模式</h2>
+  <div class="row">${Object.keys(MODES).map(k=>`<button class="mode ${k===m?'on':''}" data-m="${k}">${esc(MODES[k].n)}</button>`).join('')}</div>
+  <h3>配速表（分鐘，可直接改；合計 <b id="tot">${tot}</b> 分）</h3>
+  <table>${pl.map((p,i)=>`<tr><td>${i+1}. ${esc(p[0])}</td><td class="num"><input type="number" min="1" class="pm" data-i="${i}" value="${p[1]}"></td></tr>`).join('')}</table>
+  <div class="row" style="margin-top:8px"><button id="resetPlan">恢復預設配速</button></div>
+  <p class="mut small">不確定從哪開始：先用「前段決策 90 分鐘」連做 3 題，再排一次全程。配速是起點，做過兩三場後依「紀錄與瓶頸」調整。</p>
+ </div>
+ <div class="card"><h2>2　選題目 <button id="rand" style="float:right">隨機抽一題沒做過的</button></h2>
+  <div class="qlist">${allQ().map(q=>`<button class="q" data-q="${esc(q.id)}"><b>${q.y?q.y+' 年':'自訂'}</b> ${doneIds.has(q.id)?'<span class="tag ok">做過</span>':''}${q.calc===false?'<span class="tag warn">禁用計算器</span>':''}<br>${esc(q.t)}</button>`).join('')}</div>
+  <h3>自訂題目（敷地或其他來源的題目）</h3>
+  <div class="kv small">
+   <span>題名</span><input id="cT" placeholder="例：113 敷地 ○○○">
+   <span>基地面積㎡／建蔽%／容積%</span><span class="row"><input type="number" id="cA"><input type="number" id="cB"><input type="number" id="cF"></span>
+   <span>硬限制（一行一條）</span><textarea id="cH"></textarea>
+   <span>必交圖說（一行一張）</span><textarea id="cD"></textarea>
+  </div>
+  <div class="row" style="margin-top:8px"><button id="cAdd">加入題庫</button></div>
+ </div></div>`;
+ app.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{cfg.mode=b.dataset.m;LS.set(K.cfg,cfg);home()});
+ app.querySelectorAll('.pm').forEach(i=>i.onchange=()=>{const a=plan(m).map(p=>p[1]);a[+i.dataset.i]=Math.max(1,+i.value||1);cfg.plans[m]=a;LS.set(K.cfg,cfg);$('#tot').textContent=a.reduce((x,y)=>x+y,0)});
+ $('#resetPlan').onclick=()=>{delete cfg.plans[m];LS.set(K.cfg,cfg);home()};
+ app.querySelectorAll('.q').forEach(b=>b.onclick=()=>start(b.dataset.q));
+ $('#rand').onclick=()=>{const pool=allQ().filter(q=>!doneIds.has(q.id));const src=pool.length?pool:allQ();start(src[Math.floor(Math.random()*src.length)].id)};
+ $('#cAdd').onclick=()=>{const t=$('#cT').value.trim();if(!t){dlg('請先填題名');return}
+  const lines=s=>s.split('\n').map(x=>x.trim()).filter(Boolean);const c=LS.get(K.cus,[]);
+  c.push({id:'c'+Date.now(),t,area:+$('#cA').value||null,bcr:+$('#cB').value||null,far:+$('#cF').value||null,site:'',hard:lines($('#cH').value),prog:[],draw:lines($('#cD').value),custom:true});LS.set(K.cus,c);home()};
+ if(act){$('#resume').onclick=exam;$('#drop').onclick=()=>dlg('放棄這場？不會留下紀錄。',{yes:'放棄',ok:()=>{act=null;LS.del(K.act);home()}})}
+}
+/* ---------- 開考 ---------- */
+function start(id,force){
+ if(act&&!force){dlg('目前有一場尚未交卷，開新的一場會放棄它。',{yes:'開新的一場',ok:()=>start(id,true)});return}
+ const q=findQ(id);const pl=plan(cfg.mode);
+ act={qid:q.id,title:(q.y?q.y+' 年 ':'')+q.t,mode:cfg.mode,phases:pl.map(p=>({n:p[0],plan:p[1]})),idx:0,startedAt:Date.now(),pausedTotal:0,pauseAt:null,marks:[],checks:{},
+  calc:{A:q.area||'',b:q.bcr||'',f:q.far||'',L:q.floors||'',N:(q.prog||[]).reduce((a,p)=>a+p[1],0)||'',p:30,c:'',m:'',ca:40,ma:4,myFoot:'',myFA:'',shown:false}};
+ beeped=-1;save();exam();
+}
+function save(){LS.set(K.act,act)}
+function elapsed(){return ((act.pauseAt||Date.now())-act.startedAt-act.pausedTotal)/1000}
+function cum(i){let s=0;for(let k=0;k<=i;k++)s+=act.phases[k].plan;return s*60}
+function draws(q){const m=MODES[act.mode];return m.d?m.d:(q.draw||[]).concat(COMMON)}
+function today(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+function exam(){
+ const q=findQ(act.qid);const total=cum(act.phases.length-1);
+ app.innerHTML=`<div class="exam">
+ <div class="card"><h2>${esc(act.title)}</h2>
+  ${q.calc===false?'<span class="tag warn">本年禁止使用電子計算器：量體請手算</span>':q.calc?'<span class="tag">本年可用計算器</span>':''}
+  ${qview(q)}${q.pdf&&LOCAL?`<p class="small"><a href="題目pdf/${esc(q.pdf)}" target="_blank">另開原題 PDF</a></p>`:''}
+  ${q.site?`<h3>基地</h3><div>${esc(q.site)}</div>`:''}
+  <h3>開發強度</h3><div>基地 ${q.area?num(q.area,2)+'㎡'+(q.areaEst?'（由題目尺寸換算，非題目明示）':''):'（依附圖自行計算）'}｜建蔽 ${q.bcr?q.bcr+'%':'—'}｜容積 ${q.far?q.far+'%':'—'}${q.floors?'｜樓層上限 '+q.floors:''}</div>
+  ${q.score?`<h3>配分</h3><div>${esc(q.score)}</div>`:''}
+  ${q.hard&&q.hard.length?`<h3>硬限制（不可違反）</h3><ul class="tight">${q.hard.map(h=>`<li>${esc(h)}</li>`).join('')}</ul>`:''}
+  ${q.prog&&q.prog.length?`<h3>題目指定面積</h3><table>${q.prog.map(p=>`<tr><td>${esc(p[0])}</td><td class="num">${num(p[1])}㎡</td></tr>`).join('')}</table>`:''}
+  <p class="mut small">此卡是摘要，作答仍以原題 PDF 為準；先自己讀題再對照這張卡，才練得到讀題。</p>
+ </div>
+ <div>
+  <div class="card" id="clockCard"><div class="sub" id="phName"></div><div class="clock" id="clock">0:00</div><div class="sub" id="phSub"></div>
+   <div class="row" style="justify-content:center;margin:12px 0"><button class="pri big" id="next"></button><button id="pause"></button></div>
+   <div class="sub">全場剩餘 <b id="remain"></b>　<span id="drift"></span></div></div>
+  <div class="card"><h2>配速</h2><div id="phases"></div></div>
+ </div>
+ <div>
+  <div class="card"><h2>量體手算對答案</h2><div id="calc"></div></div>
+  <div class="card"><h2>${MODES[act.mode].d?'本場要交的東西':'必交圖說'}（畫完就勾）</h2><div id="chk"></div></div>
+ </div></div>`;
+ $('#next').onclick=()=>{act.marks[act.idx]=elapsed();if(act.idx<act.phases.length-1){act.idx++;save();paint()}else{save();review()}};
+ $('#pause').onclick=()=>{if(act.pauseAt){act.pausedTotal+=Date.now()-act.pauseAt;act.pauseAt=null}else act.pauseAt=Date.now();save();paint()};
+ renderChk(q);renderCalc();paint();stopTick();tick=setInterval(paint,500);
+}
+function stopTick(){if(tick){clearInterval(tick);tick=null}}
+function paint(){
+ if(!act||!$('#clock'))return;
+ const e=elapsed(),i=act.idx,total=cum(act.phases.length-1),left=cum(i)-e;
+ $('#phName').textContent=`第 ${i+1}／${act.phases.length} 階段：${act.phases[i].n}`;
+ const c=$('#clock');c.textContent=fmt(left);c.classList.toggle('over',left<0);
+ $('#phSub').textContent=act.pauseAt?'已暫停':left<0?'這階段已超時，現在就收尾往下走':'本階段剩餘時間';
+ $('#remain').textContent=fmt(total-e);
+ $('#next').textContent=i<act.phases.length-1?'完成此階段 →':'交卷';
+ $('#pause').textContent=act.pauseAt?'繼續':'暫停';
+ if(i>0){const d=act.marks[i-1]-cum(i-1);$('#drift').innerHTML=d>30?`<span class="late">目前落後 ${fmt(d)}</span>`:d<-30?`<span class="early">目前超前 ${fmt(-d)}</span>`:'進度準時'}else $('#drift').textContent='';
+ if(left<0&&beeped!==i){beeped=i;beep();const cc=$('#clockCard');cc.classList.remove('flash');void cc.offsetWidth;cc.classList.add('flash')}
+ $('#phases').innerHTML=act.phases.map((p,k)=>{const st=k<i?'done':k===i?'cur':'';let r='';
+  if(k<i){const used=act.marks[k]-(k?act.marks[k-1]:0),d=used-p.plan*60;r=`<span class="${d>30?'late':'early'}">${fmt(used)}（${d>=0?'+':''}${fmt(d)}）</span>`}
+  return `<div class="ph ${st}"><span class="n">${k+1}. ${esc(p.n)}</span><span class="t">${p.plan} 分</span><span class="t">${r}</span></div>`}).join('');
+}
+function beep(){try{const A=new (window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=A.createOscillator(),g=A.createGain();o.frequency.value=880;o.connect(g);g.connect(A.destination);g.gain.value=.15;o.start(A.currentTime+t);o.stop(A.currentTime+t+.2)})}catch(e){}}
+function renderChk(q){
+ const d=draws(q);
+ $('#chk').innerHTML=d.map((x,i)=>`<label class="chk"><input type="checkbox" data-i="${i}" ${act.checks[i]!=null?'checked':''}><span>${esc(x)} <span class="mut small">${act.checks[i]!=null?'＠'+fmt(act.checks[i]):''}</span></span></label>`).join('');
+ $('#chk').querySelectorAll('input').forEach(c=>c.onchange=()=>{if(c.checked)act.checks[c.dataset.i]=elapsed();else delete act.checks[c.dataset.i];save();renderChk(q)});
+}
+/* ---------- 量體計算 ---------- */
+function calcOut(c){
+ const A=+c.A,b=+c.b/100,f=+c.f/100,N=+c.N,p=Math.min(.8,Math.max(0,+c.p/100));
+ const o={foot:A&&b?A*b:null,fa:A&&f?A*f:null};
+ o.open=o.foot!=null?A-o.foot:null;
+ o.gross=N?N/(1-p):null;
+ o.use=o.gross&&o.fa?o.gross/o.fa:null;
+ const g=o.gross||o.fa;
+ o.fl=g&&o.foot?Math.ceil(g/o.foot-1e-9):null;
+ o.per=o.fl?g/o.fl:null;
+ o.park=(+c.c||0)*(+c.ca||0)+(+c.m||0)*(+c.ma||0);
+ o.parkPct=o.park&&A?o.park/A:null;
+ return o;
+}
+function renderCalc(){
+ const c=act.calc,box=$('#calc');
+ const f=(k,l,u)=>`<span>${l}</span><span><input type="number" step="any" data-k="${k}" value="${esc(c[k])}"> ${u||''}</span>`;
+ box.innerHTML=`<div class="kv small">
+  ${f('A','基地面積','㎡')}${f('b','建蔽率','%')}${f('f','容積率','%')}${f('L','樓層上限','層（沒有就空白）')}
+  ${f('N','淨需求面積合計','㎡')}${f('p','公共空間占總樓地板','%')}
+  ${f('c','汽車位','部')}${f('m','機車位','部')}${f('ca','每汽車位估','㎡（含車道）')}${f('ma','每機車位估','㎡')}
+ </div>
+ <h3>先在紙上手算，再填這兩格</h3>
+ <div class="kv small">${f('myFoot','我算的最大建築面積','㎡')}${f('myFA','我算的最大容積樓地板','㎡')}</div>
+ <div class="row" style="margin-top:8px"><button class="pri" id="chkCalc">對答案</button></div>
+ <div id="calcOut"></div>
+ <p class="mut small">公共空間占比、每車位面積是估算係數，不是法規值，可依題目調整。</p>`;
+ box.querySelectorAll('input').forEach(i=>i.oninput=()=>{c[i.dataset.k]=i.value;save();if(c.shown)showCalc()});
+ $('#chkCalc').onclick=()=>{c.shown=true;save();showCalc()};
+ if(c.shown)showCalc();
+}
+function showCalc(){
+ const c=act.calc,o=calcOut(c);
+ const judge=(mine,ans)=>mine===''||ans==null?'':Math.abs(+mine-ans)<=Math.max(1,ans*.005)?'<span class="tag ok">手算正確</span>':`<span class="tag bad">手算不符（你填 ${esc(mine)}）</span>`;
+ const w=[];
+ if(o.use!=null&&o.use>1.0001)w.push('<span class="tag bad">需求超過容積上限：刪減面積或下修公共占比</span>');
+ if(o.use!=null&&o.use<.8)w.push('<span class="tag warn">只用到容積的 '+num(o.use*100)+'%：確認題目是否要求用足</span>');
+ if(o.fl&&+c.L&&o.fl>+c.L)w.push('<span class="tag bad">所需層數超過樓層上限 '+esc(c.L)+' 層</span>');
+ $('#calcOut').innerHTML=`<div class="out small">
+  最大建築面積 <b>${num(o.foot,1)}</b>㎡ ${judge(c.myFoot,o.foot)}<br>
+  最大容積樓地板 <b>${num(o.fa,1)}</b>㎡ ${judge(c.myFA,o.fa)}<br>
+  法定空地至少 <b>${num(o.open,1)}</b>㎡<br>
+  估計總樓地板（淨÷(1−公共占比)） <b>${num(o.gross,0)}</b>㎡${o.use!=null?'，容積使用 <b>'+num(o.use*100)+'%</b>':''}<br>
+  蓋滿建蔽時至少 <b>${num(o.fl)}</b> 層，平均每層 <b>${num(o.per,0)}</b>㎡<br>
+  停車估算 <b>${num(o.park||null,0)}</b>㎡${o.parkPct?'（約基地的 '+num(o.parkPct*100)+'%）':''}<br>${w.join(' ')}</div>`;
+}
+/* ---------- 交卷檢討 ---------- */
+function review(){
+ stopTick();if(!act.pauseAt){act.pauseAt=Date.now();save()}
+ const q=findQ(act.qid),d=draws(q);
+ app.innerHTML=`<div class="card"><h2>交卷檢討：${esc(act.title)}</h2>
+ <p>用時 <b>${fmt(elapsed())}</b>／計畫 ${fmt(cum(act.phases.length-1))}。照實填，這份紀錄是用來找你自己的瓶頸。</p>
+ <div class="grid2"><div>
+  <h3>圖說完成度（沒畫完的不要勾）</h3>${d.map((x,i)=>`<label class="chk"><input type="checkbox" class="rd" data-i="${i}" ${act.checks[i]!=null?'checked':''}><span>${esc(x)}</span></label>`).join('')}
+  <h3>法規紅線（有做到才勾）</h3>${REDLINE.map((x,i)=>`<label class="chk"><input type="checkbox" class="rl" data-i="${i}"><span>${esc(x)}</span></label>`).join('')}
+ </div><div>
+  <h3>自評量尺（0 沒有／1 部分／2 圖上可指認）</h3>
+  <table>${RUBRIC.map((r,i)=>`<tr><td><b>${esc(r[0])}</b><br><span class="mut small">${esc(r[1])}</span></td><td><select class="rb" data-i="${i}"><option>0</option><option selected>1</option><option>2</option></select></td></tr>`).join('')}</table>
+  <h3>復盤三行</h3>
+  <div class="kv small"><span>最大錯誤</span><input id="n1" style="width:100%"><span>下次觸發：若…</span><input id="n2" style="width:100%"><span>行動規則：我就…</span><input id="n3" style="width:100%"></div>
+  <div class="row" style="margin-top:14px"><button class="pri big" id="saveRev">存檔</button><button id="backExam">還沒畫完，回考場</button></div>
+ </div></div></div>`;
+ $('#backExam').onclick=()=>{act.pausedTotal+=Date.now()-act.pauseAt;act.pauseAt=null;act.marks.length=act.phases.length-1;save();exam()};
+ $('#saveRev').onclick=()=>{
+  const undone=[...app.querySelectorAll('.rd')].filter(c=>!c.checked).map(c=>d[+c.dataset.i]);
+  const red=[...app.querySelectorAll('.rl')].filter(c=>!c.checked).map(c=>REDLINE[+c.dataset.i]);
+  const rub=[...app.querySelectorAll('.rb')].map(s=>+s.value);
+  const rec={date:today(),qid:act.qid,title:act.title,mode:act.mode,total:elapsed(),planTotal:cum(act.phases.length-1),
+   phases:act.phases.map((p,k)=>({n:p.n,plan:p.plan*60,used:(act.marks[k]!=null?act.marks[k]:elapsed())-(k?act.marks[k-1]:0)})),
+   drawN:d.length,undone,red,rub,notes:[$('#n1').value,$('#n2').value,$('#n3').value]};
+  const h=LS.get(K.hist,[]);h.push(rec);LS.set(K.hist,h);logDay(rec.total/60,'sim');act=null;LS.del(K.act);history_()};
+}
+/* ---------- 紀錄與瓶頸 ---------- */
+function analyse(h){
+ const ph={},un={},rl={};let rub=[0,0,0];
+ h.forEach(r=>{r.phases.forEach(p=>{(ph[p.n]=ph[p.n]||[]).push(p.used-p.plan)});r.undone.forEach(u=>un[u]=(un[u]||0)+1);r.red.forEach(u=>rl[u]=(rl[u]||0)+1);r.rub.forEach((v,i)=>rub[i]+=v)});
+ const phA=Object.keys(ph).map(n=>({n,avg:ph[n].reduce((a,b)=>a+b,0)/ph[n].length,c:ph[n].length})).sort((a,b)=>b.avg-a.avg);
+ const top=o=>Object.keys(o).map(n=>({n,c:o[n]})).sort((a,b)=>b.c-a.c);
+ return {phA,un:top(un),rl:top(rl),rub:rub.map(v=>h.length?v/h.length:0)};
+}
+function history_(){
+ stopTick();stopCd();clearDraw();const h=LS.get(K.hist,[]);const a=analyse(h);
+ const worst=a.phA[0]&&a.phA[0].avg>60?a.phA[0]:null;
+ app.innerHTML=`<div class="card"><h2>你的瓶頸（${h.length} 場紀錄）</h2>
+ ${!h.length?'<p class="mut">還沒有紀錄。做完一場並存檔後，這裡會告訴你時間花在哪、哪張圖最常畫不完。</p>':`
+ <div class="grid2"><div>
+  <p>${worst?`超時最嚴重：<b>${esc(worst.n)}</b>，平均超過 <b class="late">${fmt(worst.avg)}</b>。下一場先只練這一段。`:'各階段平均都在配速內 1 分鐘以內。'}</p>
+  <h3>各階段平均超時（正值＝超時）</h3><table>${a.phA.map(p=>`<tr><td>${esc(p.n)}</td><td class="num ${p.avg>30?'late':'early'}">${p.avg>=0?'+':''}${fmt(p.avg)}</td><td class="num mut">${p.c} 場</td></tr>`).join('')}</table>
+ </div><div>
+  <h3>最常沒畫完的圖</h3>${a.un.length?`<table>${a.un.slice(0,6).map(u=>`<tr><td>${esc(u.n)}</td><td class="num">${u.c} 次</td></tr>`).join('')}</table>`:'<p class="mut small">沒有。</p>'}
+  <h3>最常漏掉的紅線</h3>${a.rl.length?`<table>${a.rl.slice(0,6).map(u=>`<tr><td>${esc(u.n)}</td><td class="num">${u.c} 次</td></tr>`).join('')}</table>`:'<p class="mut small">沒有。</p>'}
+  <h3>自評平均（滿分 2）</h3><div>${RUBRIC.map((r,i)=>`${esc(r[0])} <b>${a.rub[i].toFixed(1)}</b>`).join('　')}</div>
+ </div></div>`}</div>
+ <div class="card"><h2>每場紀錄</h2>
+ ${h.length?`<table><tr><th>日期</th><th>題目</th><th>模式</th><th>用時／計畫</th><th>圖說完成</th><th>自評</th><th>復盤</th><th></th></tr>${h.map((r,i)=>`<tr><td>${esc(r.date.slice(0,10))}</td><td>${esc(r.title)}</td><td>${esc(MODES[r.mode]?MODES[r.mode].n:r.mode)}</td><td class="num">${fmt(r.total)}／${fmt(r.planTotal)}</td><td class="num">${r.drawN-r.undone.length}／${r.drawN}</td><td class="num">${r.rub.join('·')}</td><td class="small">${r.notes.filter(Boolean).map(esc).join('<br>')}</td><td><button class="del" data-i="${i}">刪</button></td></tr>`).reverse().join('')}</table>`:'<p class="mut">無。</p>'}
+ <div class="row" style="margin-top:10px"><button id="exp">匯出備份</button><button id="imp">匯入備份</button></div><p class="mut small">紀錄只存在這台裝置的這個瀏覽器。要搬到另一台，匯出後把文字貼到那邊的「匯入備份」。</p></div>`;
+ app.querySelectorAll('.del').forEach(b=>b.onclick=()=>dlg('刪除這場紀錄？',{yes:'刪除',ok:()=>{h.splice(+b.dataset.i,1);LS.set(K.hist,h);history_()}}));
+ $('#exp').onclick=()=>dlg('把下面整段文字複製起來保存。',{area:JSON.stringify({hist:h,cus:LS.get(K.cus,[]),cfg,daily:D}),copy:true});
+ $('#imp').onclick=()=>dlg('貼上備份文字。會取代這台裝置目前的全部紀錄。',{area:'',yes:'匯入',ok:v=>{try{const d=JSON.parse(v);if(!Array.isArray(d.hist))throw 0;LS.set(K.hist,d.hist);if(Array.isArray(d.cus))LS.set(K.cus,d.cus);if(d.daily&&d.daily.days){D=Object.assign(D,d.daily);saveD()}history_()}catch(x){dlg('這段文字不是備份格式，沒有匯入。')}}});
+}
+/* =====================================================================
+   今晚：給下班後的人用的入口。先問多累，再依個人背景派一件小事。
+   ===================================================================== */
+(()=>{let d=null,clicked=false,fake=null;const SEL='button,a,label,summary,input,select';
+ addEventListener('pointerdown',e=>{if(e.pointerType==='pen'){d={t:e.target,x:e.clientX,y:e.clientY};clicked=false}},true);
+ addEventListener('click',e=>{if(e.isTrusted&&fake&&Date.now()-fake.t<1000&&fake.el.contains(e.target)){fake=null;e.preventDefault();e.stopImmediatePropagation();return}clicked=true},true);
+ addEventListener('pointerup',e=>{if(e.pointerType!=='pen'||!d)return;const s=d;d=null;const el=e.target.closest&&e.target.closest(SEL);
+  if(!el||!s.t.closest||s.t.closest(SEL)!==el||el.closest('.padbar')||Math.hypot(e.clientX-s.x,e.clientY-s.y)>24)return;setTimeout(()=>{if(!clicked){fake={el,t:Date.now()};el.click()}},150)},true)})();
+const KD='sk-daily-v1';
+let D=Object.assign({pad:null,prof:null,days:{},exam:'',calcLv:1,cards:{},reads:{},flash:{},handI:0,seq:0,last:{}},LS.get(KD,{}));
+const saveD=()=>LS.set(KD,D);
+const dstr=d=>{const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+const weekKey=d=>{const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return dstr(x)};
+const P=a=>a[Math.floor(Math.random()*a.length)];
+const R=(a,b,s=1)=>a+s*Math.floor(Math.random()*(Math.floor((b-a)/s)+1));
+function logDay(min,skill){const t=today();D.days[t]=(D.days[t]||0)+Math.max(1,Math.round(min));if(skill)D.last[skill]=++D.seq;saveD()}
+/* 連續天數：每週（一到日）有 2 天可以休息不斷鏈 */
+function streak(){let n=0,d=new Date(),rest={};if(!D.days[dstr(d)])d.setDate(d.getDate()-1);
+ for(let i=0;i<500;i++){if(D.days[dstr(d)])n++;else{const w=weekKey(d);rest[w]=(rest[w]||0)+1;if(rest[w]>2)break}d.setDate(d.getDate()-1)}return n}
+let cd=null;
+function stopCd(){if(cd){clearInterval(cd);cd=null}}
+function countdown(sec,el,onEnd){stopCd();const end=Date.now()+sec*1000;const f=()=>{const l=(end-Date.now())/1000;if(!el.isConnected){stopCd();return}el.textContent=fmt(Math.max(0,l));if(l<=0){stopCd();beep();onEnd&&onEnd()}};f();cd=setInterval(f,500)}
+
+const SK={look:'看一張好圖',hand:'手感小練習',size:'尺寸感 5 張',calc:'量體快算 5 題',read:'讀題抓限制',card:'一張小圖'};
+const POOL={3:['look','hand','size'],10:['calc','read','card','hand']};
+const PROFQ=[
+ ['你的手繪底子？',['很少手繪，平常都用電腦','畫過，但很慢','畫得完，速度還行']],
+ ['設計實務經驗？',['學生或剛畢業','事務所 1–3 年','3 年以上']],
+ ['術科現在卡在哪？',['不知道從哪開始準備','考場上畫不完','畫完了但分數沒過']]
+];
+function weights(){const p=D.prof||{draw:1,exp:1,stuck:1};
+ const w={look:1,hand:[2,1,.3][p.draw],size:[3,1.5,.5][p.exp],calc:1.5,read:[1,1.5,3][p.draw],card:[1,2,2][p.draw]};
+ if(p.stuck===0){w.look+=1.5;w.hand+=1}if(p.stuck===1){w.card+=1.5;w.calc+=.5;w.hand+=.5}if(p.stuck===2){w.read+=2;w.card+=1}return w}
+function pick(e,avoid){const w=weights(),c=POOL[e].filter(s=>s!==avoid);const rec=Math.max(...c.map(s=>D.last[s]||0));
+ const ws=c.map(s=>w[s]*(rec&&(D.last[s]||0)===rec?.25:1));let r=Math.random()*ws.reduce((a,b)=>a+b,0);
+ for(let i=0;i<c.length;i++){r-=ws[i];if(r<=0)return c[i]}return c[0]}
+
+const HAND=[
+ '徒手畫 10 條 10cm 平行線，間距盡量一樣。再畫 10 條垂直的。',
+ '用工程字寫「配置圖　平面圖　剖面圖　立面圖　透視圖」各 3 次，字高 1cm。',
+ '畫 5 棵平面樹（大小不同）＋ 3 棵立面樹。',
+ '畫 5 個立面比例人（1/100，約 1.7cm 高）＋ 1 台立面汽車。',
+ '畫 3 組「圖名＋比例＋指北針」，像考卷上會出現的樣子。',
+ '用 1/200 畫 3×4 跨、柱距 8m 的柱位格線，標柱心距。',
+ '用 1/100 畫一座直通樓梯平面：上下箭頭、扶手、平台。',
+ '用 1/100 畫一間無障礙廁所平面，標出 1.5m 迴轉圓。',
+ '用 1/200 畫 6 格垂直停車位（2.5×5.5m）＋ 6m 車道，標尺寸。',
+ '用 1/200 畫一個 3 層樓的簡單剖面：樓板線、樓高、地面線、兩個人。',
+ '畫 4 種鋪面／草地／水面的平面填充，每格 3×3cm。',
+ '畫一個箭頭圖解：把「公共→半公共→私密」三層關係用泡泡和箭頭畫出來。'
+];
+const FLASH=[
+ ['汽車停車位的標準尺寸？','寬 2.5m × 長 5.5m','畫 1/200 時就是 1.25cm × 2.75cm。'],
+ ['機車停車位常用尺寸？','約寬 1m × 長 2m（設計常用值）','技術規則無全國尺寸；臺北市指導原則為0.9×2.2m，作答依題目或地方規定。'],
+ ['無障礙汽車停車位（單一車位）尺寸？','寬 3.5m × 長 6m（含 1.5m 下車區）','兩格相鄰可共用下車區：合寬 5.5m × 長 6m（規範 804.2）。'],
+ ['汽車坡道的坡度上限？','1:6','地下一層樓高 3.6m 就要約 21.6m 長的坡道，配置時先留。'],
+ ['車道寬度：雙車道與單車道？','雙車道 ≥5.5m、單車道 ≥3.5m','垂直車位前方需深6m（§61），一跨約17m；50輛以上原則採雙車道。'],
+ ['無障礙坡道的坡度？','1:12 以下','高差60cm要7.2m長＋兩端150cm平台；每升75cm加中間平台；未達20cm可放寬。'],
+ ['輪椅迴轉空間的直徑？','1.5m','無障礙廁所、電梯前、出入口都會用到。'],
+ ['室外無障礙通路的淨寬？','1.3m 以上','獨棟／連棟自用住宅可為0.9m（規範203.2.3）；地面坡度 ≤1/15。'],
+ ['標準籃球場的尺寸？','28m × 15m','國際籃總規則尺寸；四周還要緩衝，107 年運動中心題用到。'],
+ ['國小樓梯：級高、級深、寬度？','級高 ≤16cm、級深 ≥26cm、梯及平台寬 ≥1.4m','限小學兒童用（§33）；每高3m內設平台（§34），樓高3.6m至少23級。'],
+ ['居室到直通樓梯的步行距離，一般用途上限？','50m（A、B-1、B-2、B-3、D-1 類 30m；C 類 70m）','15層以上30→20m、50→40m；非防火構造一律≤30m。作答以現行條文為準。'],
+ ['1/200 的圖上，1cm 代表實際多長？','2m','1/300 是 3m、1/500 是 5m。'],
+ ['基地 60m 寬，1/300 的配置圖要畫多寬？','20cm','60m＝6000cm；6000÷300。排版前先算每張圖多大。'],
+ ['一跨要停三部車，柱心距大約多少？','約 8–8.4m','2.5×3＝7.5m，再加柱寬與餘裕。地上層柱距常由此決定。'],
+ ['地下停車場每個車位（含車道）大約抓多少㎡？','約 35–40㎡','經驗值，用來快速估地下室要幾層。'],
+ ['建蔽率 60%、容積率 240%，每層蓋滿至少幾層？','4 層','容積率÷建蔽率，無條件進位。']
+];
+const IMG={'A級_完整圖面':['完整圖面_01__S__28024876_0.jpg','完整圖面_02__S__28024877_0.jpg','完整圖面_03__S__28024878_0.jpg','完整圖面_04__S__28024879_0.jpg','完整圖面_05__S__28024880_0.jpg','完整圖面_06__S__28024881_0.jpg','完整圖面_07__S__28024882_0.jpg','完整圖面_08__S__28098590_0.jpg','完整圖面_09__S__28098591_0.jpg'],
+ 'B級_案例參考':['案例參考_01__221984_0.jpg','案例參考_02__221985_0.jpg','案例參考_03__221986_0.jpg','案例參考_04__221987_0.jpg','案例參考_24__S__27762697_0.jpg','案例參考_25__S__27762698_0.jpg','案例參考_26__S__28098587.jpg'],
+ 'E級_FB_K圖會_評圖與圖面':['K圖會_評圖圖面_01__0bb048723954ae50.jpg','K圖會_評圖圖面_02__2cdb0a8a1a2757d4.jpg','K圖會_評圖圖面_03__43e324850fae1f37.jpg','K圖會_評圖圖面_04__4a5da3ccb0c8dd51.jpg','K圖會_評圖圖面_05__55dd045254e9ae4b.jpg','K圖會_評圖圖面_06__6a058b5e043c36d4.jpg','K圖會_評圖圖面_07__75d6668e0cc4650f.jpg','K圖會_評圖圖面_08__bd5ff29e1158058b.jpg','K圖會_評圖圖面_09__de8a746c265dd945.jpg']};
+const LOOKQ=['只看版面：配置、平面、剖面、透視各占多大？畫面重心在哪？','只看線條：哪些線最粗？粗細分了幾級？','只看文字：字寫在哪裡？一段大概幾個字？','找入口：人從哪裡進基地、從哪裡進建築？','看建築和空地的比例，空地被畫成什麼？','找一個你下次想偷的畫法。一個就好。'];
+const CARDS=[
+ ['109','200 床與 4 層的量體選擇','在不超過 4 層、且保留自行車與戶外空間下，比較「中央廊道板式」與「庭院／雙翼」兩個量體。','配置＋一層典型住宿層：標入口、兩種房型、直通／安全梯與主動線。','南側便利商店傍晚人潮增加，主要交誼廳入口要怎麼同時開放又保護住宿私密？','床位、避難、私密三者都有圖面證據。'],
+ ['109','宿舍與集會的時段衝突','120 人演講與日常交誼同在 200㎡ 多功能空間，決定它放地面層還是上層。','地面層小平面＋人流箭頭：住民、訪客、服務三條路徑。','新增夜間學生議會，外來訪客不得進入住宿樓層。','外來動線不穿越住宿核心；集會可獨立管理。'],
+ ['109','單元與無障礙','用一個 1:50 概念單元比較兩種房型，配置家具與衛浴。','單元平面：床、桌、櫃、門窗、衛浴與主要通道尺寸。','其中一房改為行動不便者入住，且不准擴大外牆面寬。','通道、轉向、門與衛浴關係有合理修正。'],
+ ['109','安全梯距離','決定兩座安全梯與電梯在典型層的相對位置。','典型層＋最遠點到安全梯的行走路徑。','一座梯間因結構／採光必須內縮，路徑怎麼維持可讀？','安全梯不是只畫符號；路徑與核心關係可檢查。'],
+ ['110','雙街面與榕樹','比較活動中心主入口面向北側商業街、或面向南側學校／住宅。','基地配置：兩側入口、榕樹、公共空間、住宅入口與地下車道。','上下學時南側人潮大增，公共客廳怎麼不與接送動線衝突？','公共性、樹木保護、住宅私密都被處理。'],
+ ['110','公共與住宅的垂直分層','選「公共低層＋住宅上層」或「兩翼分置」，並說明服務核。','剖面＋地面層：客廳／教室、套房、電梯梯間、地下車道。','夜間教室出租，而住戶要安靜回家。','兩種時段可分流，核心不互相干擾。'],
+ ['110','容積上限下的取捨','要設計到容積上限且套房盡量多，哪些公共機能可合併、哪些不能？','面積／分層泡泡圖＋一張標準住宅層。','教室須分大小若干間，不能只畫一個大箱子。','面積企圖、採光私密、公共可分隔同時成立。'],
+ ['110','兩向剖面','針對北商南住的都市剖面，決定哪一側退縮／開放較強。','南北剖面＋東西剖面簡圖，標街道、樹、樓層與服務核。','榕樹冠幅擴大，地面層不能再用原先的量體。','剖面能說明量體與公共生活，不是裝飾。'],
+ ['111','市場客流與物流分流','為市場、線上提取 30㎡ 與物流 210㎡ 安排客人、貨車與廢棄物進出。','地面層：顧客入口、提取、卸貨、物流、超市與服務路線。','南側 15m 道路在上學時不宜作主要貨車出入口。','人貨不交叉、時段選擇明確、物流可到倉儲。'],
+ ['111','2m 高差與公共層次','東南高、西北低，選平台、緩坡或半地下策略，串聯市場與社區。','基地剖面＋一樓平面：無障礙路徑、半戶外通廊與廣場。','新增需要雨天排隊的提取服務。','高差、遮蔽、無障礙與排隊同時可讀。'],
+ ['111','健康與市場的衛生邊界','決定健康檢查／接種、治療所與市場飲食的相鄰及分層。','泡泡圖＋垂直分層圖：候診、活動、飲食、物流、行政。','健康講座在夜間開放，市場已關閉。','健康動線不必穿越市場；夜間可獨立開放。'],
+ ['111','共享食堂的公共性','共享食堂、圖書交誼、學習中心與集會各有不同噪音與時段。','典型公共層平面＋一條安靜／熱鬧分界。','學習中心要在市場尖峰時保持安靜。','不只分房間；有動線／開放時段策略。'],
+ ['112','校門、接送與兒童安全','在西、北、東三側道路中選主校門與接送位置，處理汽機車、自行車、步行。','基地配置：校門、接送迴圈、停車、步行安全帶與操場。','雨天接送需求增加，但車不能進入主要學生活動區。','車流不切斷學生活動；雨遮與步行安全可讀。'],
+ ['112','幼兒園與國小的共享邊界','幼兒園靠近校門、靠近操場還是獨立庭院？和普通教室的關係？','一樓平面：幼兒活動室、戶外遊戲、管理、家長等候與國小主動線。','幼兒園放學時間與國小不同。','幼兒安全可控，能共享資源但不混流。'],
+ ['112','氣候與地方性','把強日照、東北季風、西南風與紅磚紅瓦聚落變成「畫得出來」的校舍策略。','一段教室剖面＋立面：遮陽、通風、走廊、屋頂／材料。','教室朝向受操場位置限制，不能全部採理想方位。','策略在剖面／立面有實體，不是只寫口號。'],
+ ['112','操場與校舍的全天使用','社區可使用教室資源，處理學校安全、操場、活動中心與夜間開放。','配置＋夜間開放路線，標可鎖／可開的邊界。','社區夜間使用不得進入一般教室走廊。','營運邊界、廁所與入口可管理。'],
+ ['113','60 人單元照顧與家屬接送','以 10–15 人單元照顧，安排交通車、家屬接送、步行長者、行政與會客。','地面層：接送臨停、門廳、單元活動、等候、無障礙入口與管理點。','周邊巷弄汽機車混雜，接送不能長時間占用。','接送安全、管理視線、長者步行距離都可讀。'],
+ ['113','午休、活動與安靜復健','把多功能活動／餐、群體午休、二人型午休、諮詢與廚房分群。','日照中心單層平面：動／靜區、衛浴、照護站、迴遊走廊。','一位失智長者容易迷路，且活動噪音不能干擾午休。','有定向線索與迴遊路徑，安靜區不被穿越。'],
+ ['113','日照與混合用途的垂直邊界','日照中心放低層、或以平台／庭院獨立？處理住宅、工作坊與店鋪。','剖面＋地面層：日照、交誼、訓練、商業、住宅與服務核。','飲食店鋪不得超過 300㎡，商業店鋪不得超過 500㎡。','日照可安全管理；各用途入口／核心／時段清楚。'],
+ ['113','潮濕氣候與公園／市場關係','決定面向公園的休閒園藝，與面向繁忙道路的緩衝方式。','基地配置＋重點空間 1:100 概念平剖：遮陽、通風、雨遮、室內外界面。','春季多雨，接送與戶外活動仍要能用。','環境策略落在界面與動線，不只寫「綠化」。']
+];
+function genCalc(lv){
+ const w=R(20,60,2),d=R(30,80,5),A=w*d,b=P([40,45,50,55,60]),f=P([120,160,200,225,240,300]);
+ const T=[
+  ()=>({q:`基地 ${w}m × ${d}m，建蔽率 ${b}%。最大建築面積是多少㎡？`,a:A*b/100,h:`${w}×${d}＝${A}；${A}×${b}%`}),
+  ()=>({q:`基地 ${A}㎡，容積率 ${f}%。最大容積樓地板是多少㎡？`,a:A*f/100,h:`${A}×${f}%`}),
+  ()=>{const s=P([200,300,400,500,600]),m=R(20,90,2);return{q:`比例 1/${s} 的圖上，實際 ${m}m 要畫幾公分？`,a:m*100/s,h:`${m}m＝${m*100}cm；÷${s}`}}];
+ if(lv>=2)T.push(
+  ()=>({q:`建蔽率 ${b}%、容積率 ${f}%，每層都蓋滿建蔽，至少要幾層才用完容積？`,a:Math.ceil(f/b-1e-9),h:`${f}÷${b}＝${(f/b).toFixed(2)}，無條件進位`}),
+  ()=>{const p=P([80,90]);return{q:`基地 ${A}㎡、容積率 ${f}%，題目要求容積至少用到 ${p}%。樓地板下限是多少㎡？`,a:A*f/100*p/100,h:`${A}×${f}%×${p}%`}},
+  ()=>{const n=P([20,30,60,120,200]),u=P([4,5,6.6,10]);return{q:`${n} 人、每人至少 ${u}㎡，這個空間至少多少㎡？`,a:n*u,h:`${n}×${u}`}});
+ if(lv>=3)T.push(
+  ()=>{const a1=R(30,45),a2=a1+R(6,24,2),h=R(40,60,5);return{q:`梯形基地：兩平行邊 ${a1}m、${a2}m，深 ${h}m，建蔽率 ${b}%。最大建築面積是多少㎡？`,a:(a1+a2)/2*h*b/100,h:`(${a1}+${a2})÷2×${h}＝${(a1+a2)/2*h}；×${b}%`}},
+  ()=>{const s=P([3,3.5,4]);return{q:`基地 ${w}m × ${d}m，四周各退縮 ${s}m。可建範圍是多少㎡？`,a:(w-2*s)*(d-2*s),h:`(${w}−${2*s})×(${d}−${2*s})`}},
+  ()=>{const A1=R(6,12)*100,A2=R(4,9)*100,f1=P([300,360,400]),f2=P([180,200,225]);return{q:`基地跨兩分區：商業區 ${A1}㎡（容積 ${f1}%）＋住宅區 ${A2}㎡（容積 ${f2}%）。總容積樓地板是多少㎡？`,a:A1*f1/100+A2*f2/100,h:`${A1}×${f1}%＋${A2}×${f2}%`}});
+ const o=P(T)();o.a=Math.round(o.a*100)/100;return o}
+
+/* ---------- 畫面 ---------- */
+function onboard(){
+ stopTick();stopCd();clearDraw();const ans=D.prof?[D.prof.draw,D.prof.exp,D.prof.stuck]:[null,null,null];
+ const draw=()=>{app.innerHTML=`<div class="narrow"><div class="card"><h2>先認識你，三題</h2>
+  <p class="mut">每個人底子不一樣。回答完，每天給你的小事會照你的狀況配，之後也會依你做的結果自己調整。</p>
+  ${PROFQ.map((q,i)=>`<h3>${q[0]}</h3><div class="col">${q[1].map((o,k)=>`<button class="opt ${ans[i]===k?'on':''}" data-i="${i}" data-k="${k}">${o}</button>`).join('')}</div>`).join('')}
+  <div class="row" style="margin-top:16px"><button class="pri big" id="pfOk" ${ans.includes(null)?'disabled':''}>好了</button></div></div></div>`;
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ans[+b.dataset.i]=+b.dataset.k;draw()});
+  $('#pfOk').onclick=()=>{const first=!D.prof;D.prof={draw:ans[0],exp:ans[1],stuck:ans[2]};if(first)D.calcLv=ans[1]===0?1:2;saveD();tonight()}};
+ draw();
+}
+function tonight(){
+ stopTick();stopCd();clearDraw();if(!D.prof){onboard();return}
+ const t=today(),doneMin=D.days[t]||0,s=streak(),h=new Date().getHours();
+ const hi=h<5?'這麼晚了，辛苦了':h<12?'早':h<18?'午安':'下班了，辛苦了';
+ let left='';if(D.exam){const n=Math.ceil((new Date(D.exam+'T00:00')-new Date(t+'T00:00'))/864e5);left=n>=0?`距離考試 <b>${n}</b> 天`:''}
+ const dots=[];const d0=new Date();for(let i=27;i>=0;i--){const d=new Date(d0);d.setDate(d.getDate()-i);dots.push(`<i class="${D.days[dstr(d)]?'on':''}" title="${dstr(d)}"></i>`)}
+ const cardN=Object.keys(D.cards).length,readN=Object.keys(D.reads).length,total=Object.values(D.days).reduce((a,b)=>a+b,0);
+ app.innerHTML=`<div class="narrow">
+ <div class="card"><h2 style="font-size:20px">${hi}。</h2>
+  ${doneMin?`<p><span class="tag ok">今天已完成 ${doneMin} 分鐘</span> 可以收工了。還想做再選。</p>`:'<p>今天多累？選一個就好，剩下的我來決定。</p>'}
+  <div class="col">
+   <button class="energy" data-e="3"><b>累爆了</b><span>3 分鐘。看一張圖或動動手，不用想。</span></button>
+   <button class="energy" data-e="10"><b>還行</b><span>10 分鐘。一件小事，做完有答案。</span></button>
+   <button class="energy" data-e="60"><b>有精神</b><span>30 或 90 分鐘。認真跑一次前段決策。</span></button>
+  </div></div>
+ <div class="card"><div class="row"><b style="font-size:22px">${s}</b> 天連續 <span class="sp" style="flex:1"></span><span class="mut small">${left||'<a href="#" id="setExam">設定考試日</a>'}</span></div>
+  <div class="dots">${dots.join('')}</div>
+  <p class="mut small">每週可以休息 2 天不斷鏈。3 分鐘也算一天。累計 ${total} 分鐘。</p>
+  <div class="small">小圖 <b>${cardN}</b>／${CARDS.length}　讀題 <b>${readN}</b>／${Q.length}　量體快算 <b>Lv.${D.calcLv}</b></div>
+  <p class="small"><a href="#" id="tgPad">螢幕畫板：${padOn()?'開':'關'}</a>　<a href="#" id="rePf">改我的背景</a>${D.exam?'　<a href="#" id="setExam">改考試日</a>':''}</p></div></div>`;
+ app.querySelectorAll('.energy').forEach(b=>b.onclick=()=>{const e=+b.dataset.e;if(e===60)strong();else run(pick(e),e)});
+ $('#rePf').onclick=e=>{e.preventDefault();onboard()};
+ $('#tgPad').onclick=e=>{e.preventDefault();D.pad=!padOn();saveD();tonight()};
+ const se=$('#setExam');if(se)se.onclick=e=>{e.preventDefault();dlg('考試日期',{input:D.exam||'',type:'date',yes:'儲存',ok:v=>{D.exam=v&&!isNaN(new Date(v+'T00:00'))?v:'';saveD();tonight()}})};
+}
+function strong(){
+ app.innerHTML=`<div class="narrow"><div class="card"><h2>有精神的時候</h2><p>我幫你抽一題沒做過的，直接開始。</p><div class="col">
+  <button class="energy" data-m="quick"><b>30 分鐘</b><span>限制 → 四格分析 → A/B → 成果小圖 → 驗證</span></button>
+  <button class="energy" data-m="front"><b>90 分鐘</b><span>讀題到草配定案，全程最關鍵的前段</span></button>
+  <button class="energy" data-m="x"><b>我要自己選（週末整場）</b><span>8 小時大設計、4 小時敷地、自訂題目</span></button></div>
+  <p><a href="#" id="bk">← 回去</a></p></div></div>`;
+ $('#bk').onclick=e=>{e.preventDefault();tonight()};
+ app.querySelectorAll('.energy').forEach(b=>b.onclick=()=>{const m=b.dataset.m;if(m==='x'){home();return}
+  cfg.mode=m;LS.set(K.cfg,cfg);const did=new Set(LS.get(K.hist,[]).map(h=>h.qid));const pool=Q.filter(q=>!did.has(q.id));start(P(pool.length?pool:Q).id)});
+}
+const TOUCH=navigator.maxTouchPoints>0;
+const padOn=()=>D.pad==null?TOUCH:D.pad;
+const INKS=[['黑','#1a1a1a'],['水','#3f9ad6'],['草地','#7cc36a'],['樹','#2f7d4f'],['木','#b9853f'],['紅','#d9453a'],['黃','#f2c230'],['灰','#9a9a9a']];
+function pad(host){
+ host.innerHTML=`<div class="padbar"><b class="padt wide"></b>
+  <button data-t="pen" class="on">鉛筆</button><button data-t="ink">代針筆</button><button data-t="mk">麥克筆</button><button data-t="era">橡皮擦</button><button data-t="ruler">直線</button><button data-t="grid">格線</button>
+  <span class="seg"><button class="sz" data-z="0" title="細"><i style="height:1px"></i></button><button class="sz on" data-z="1" title="中"><i style="height:3px"></i></button><button class="sz" data-z="2" title="粗"><i style="height:6px"></i></button></span><hr>
+  ${INKS.map((k,n)=>`<button class="sw ${n?'':'on'}" data-c="${n}" title="${k[0]}"><i style="background:${k[1]}"></i>${k[0]}</button>`).join('')}<hr>
+  <button data-t="undo">復原</button><button data-t="redo">重做</button><button data-t="clr">清空</button><button data-t="full" class="pri">放大</button></div><canvas class="pad"></canvas>`;
+ const c=host.querySelector('canvas'),x=c.getContext('2d',{desynchronized:true});
+ let S=[],RD=[],cur=null,tool='pen',ruler=false,size=1,col=INKS[0][1],grid=false,W=0,H=0,raf=0,CL=null;
+ const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+ const style=(s,pr)=>{x.globalAlpha=1;x.lineCap=x.lineJoin='round';
+  if(s.m==='era'){x.globalCompositeOperation='destination-out';x.lineWidth=28;x.strokeStyle='#000'}
+  else{x.globalCompositeOperation='source-over';x.strokeStyle=s.c;x.lineWidth=s.m==='ink'?[1,2,3.6][s.z]:(.7+pr*2.4)*s.w}};
+ /* 筆跡平滑：每一小段都是通過中點的二次曲線，線不會一節一節的 */
+ const piece=(s,k)=>{const p=s.p,a=k>1?mid(p[k-2],p[k-1]):p[0],b=mid(p[k-1],p[k]);style(s,p[k][2]);x.beginPath();x.moveTo(a[0],a[1]);x.quadraticCurveTo(p[k-1][0],p[k-1][1],b[0],b[1]);x.stroke()};
+ const tail=s=>{const p=s.p,n=p.length;style(s,p[n-1][2]);x.beginPath();if(n===1){x.moveTo(p[0][0],p[0][1]);x.lineTo(p[0][0]+.1,p[0][1])}else{const m=mid(p[n-2],p[n-1]);x.moveTo(m[0],m[1]);x.lineTo(p[n-1][0],p[n-1][1])}x.stroke()};
+ /* 麥克筆：整筆一次畫、半透明疊色，壓在線稿上不會蓋掉黑線 */
+ const mark=s=>{const p=s.p;x.globalCompositeOperation='multiply';x.globalAlpha=.45;x.strokeStyle=s.c;x.lineCap=x.lineJoin='round';x.lineWidth=26*s.w;x.beginPath();x.moveTo(p[0][0],p[0][1]);
+  for(let k=1;k<p.length-1;k++){const m=mid(p[k],p[k+1]);x.quadraticCurveTo(p[k][0],p[k][1],m[0],m[1])}const l=p[p.length-1];x.lineTo(l[0]+(p.length===1?.1:0),l[1]);x.stroke();x.globalAlpha=1;x.globalCompositeOperation='source-over'};
+ const one=s=>{if(s.m==='mk'){mark(s);return}for(let k=1;k<s.p.length;k++)piece(s,k);tail(s)};
+ const draw=()=>{raf=0;x.globalAlpha=1;x.globalCompositeOperation='source-over';x.clearRect(0,0,W,H);S.forEach(one);if(cur)one(cur);
+  if(grid){x.globalCompositeOperation='destination-over';x.strokeStyle='#d4d4d4';x.lineWidth=1;x.beginPath();for(let a=20;a<W;a+=20){x.moveTo(a,0);x.lineTo(a,H)}for(let b=20;b<H;b+=20){x.moveTo(0,b);x.lineTo(W,b)}x.stroke()}x.globalCompositeOperation='source-over'};
+ const later=()=>{if(!raf)raf=requestAnimationFrame(draw)};
+ const fit=()=>{const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;if(!r.width)return;W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);draw()};
+ const pt=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top,e.pointerType==='pen'?(e.pressure||.3):.45]};
+ /* 直線：起點到筆尖拉一條線，接近水平、垂直、45 度時自動吸過去 */
+ const snap=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy),ang=Math.atan2(dy,dx),q=Math.PI/4,n=Math.round(ang/q)*q;return Math.abs(ang-n)<.11?[a[0]+L*Math.cos(n),a[1]+L*Math.sin(n),.45]:[b[0],b[1],.45]};
+ c.onpointerdown=e=>{if(e.pointerType==='pen')pad.pen=true;if(pad.pen&&e.pointerType==='touch')return;e.preventDefault();try{c.setPointerCapture(e.pointerId)}catch(z){}
+  const p=pt(e);cur={m:tool,c:col,z:size,w:[.55,1,1.9][size],line:ruler&&tool!=='era',id:e.pointerId,p:[p]};if(cur.line){cur.p[0][2]=.45;cur.p.push(p.slice())}if(tool==='mk'||cur.line)later()};
+ c.onpointermove=e=>{if(!cur||e.pointerId!==cur.id)return;
+  if(cur.line){cur.p[1]=snap(cur.p[0],pt(e));later();return}
+  const ev=e.getCoalescedEvents?e.getCoalescedEvents():[e];(ev.length?ev:[e]).forEach(k=>{const p=pt(k),l=cur.p[cur.p.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<.6)return;cur.p.push(p);if(cur.m!=='mk')piece(cur,cur.p.length-1)});
+  if(cur.m==='mk'||(grid&&cur.m==='era'))later()};
+ const up=e=>{if(!cur||e.pointerId!==cur.id)return;S.push(cur);RD=[];cur=null;draw()};c.onpointerup=up;c.onpointercancel=up;
+ const setTool=t=>{tool=t;host.querySelectorAll('[data-t=pen],[data-t=ink],[data-t=mk],[data-t=era]').forEach(k=>k.classList.toggle('on',k.dataset.t===t))};
+ const hit=b=>{const t=b.dataset.t;
+  if(b.dataset.c!=null){col=INKS[+b.dataset.c][1];host.querySelectorAll('.sw').forEach(k=>k.classList.toggle('on',k===b));if(tool==='era')setTool('pen')}
+  else if(b.dataset.z!=null){size=+b.dataset.z;host.querySelectorAll('.sz').forEach(k=>k.classList.toggle('on',k===b))}
+  else if(t==='pen'||t==='ink'||t==='mk'||t==='era')setTool(t)
+  else if(t==='ruler'){ruler=!ruler;b.classList.toggle('on',ruler)}
+  else if(t==='undo'){if(S.length)RD.push(S.pop());else if(CL){S=CL;CL=null}draw()}else if(t==='redo'){if(RD.length)S.push(RD.pop());draw()}
+  else if(t==='clr'){if(S.length){CL=S;RD=[];S=[];draw()}}
+  else if(t==='grid'){grid=!grid;b.classList.toggle('on',grid);draw()}
+  else if(t==='full'){const on=host.classList.toggle('full');b.textContent=on?'收起':'放大';document.documentElement.style.overflow=on?'hidden':'';fit();
+   const sw=ev=>{if(!bar.contains(ev.target)){ev.preventDefault();ev.stopPropagation()}};addEventListener('click',sw,true);setTimeout(()=>removeEventListener('click',sw,true),500)}};
+ let skipClick=0;const bar=host.querySelector('.padbar');
+ bar.addEventListener('pointerdown',e=>{if(e.pointerType!=='pen')return;const b=e.target.closest('button');if(!b)return;e.preventDefault();skipClick=Date.now();hit(b)});
+ bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(skipClick&&Date.now()-skipClick<2000){skipClick=0;return}hit(b)});
+ /* 放大時把倒數計時帶進工具列 */
+ const tm=setInterval(()=>{if(!host.isConnected){clearInterval(tm);c.width=c.height=0;return}const d=document.querySelector('#cdn');host.querySelector('.padt').textContent=host.classList.contains('full')&&d?d.textContent:''},500);
+ /* 擋掉瀏覽器自己的手勢：畫圖時頁面不捲動、不縮放、不選字、不跳長按選單 */
+ ['touchstart','touchmove','touchend','gesturestart','gesturechange','gestureend'].forEach(n=>c.addEventListener(n,e=>{if(e.cancelable)e.preventDefault()},{passive:false}));
+ ['contextmenu','dblclick','selectstart','dragstart'].forEach(n=>host.addEventListener(n,e=>e.preventDefault()));
+ host.addEventListener('touchmove',e=>{if(host.classList.contains('full')&&e.cancelable&&!(e.target.closest&&e.target.closest('.padbar')))e.preventDefault()},{passive:false});
+ if(window.ResizeObserver)new ResizeObserver(fit).observe(c);fit();
+}
+function clearDraw(){document.body.classList.remove('drawing');document.documentElement.style.overflow=''}
+function shell(skill,e,body,withPad,wide){
+ const up=withPad&&padOn();document.body.classList.toggle('drawing',!!up);if(!up)document.documentElement.style.overflow='';
+ app.innerHTML=`<div class="${up?'work':'narrow'+(wide?' wide':'')}"><div><div class="card"><div class="row"><span class="tag">${e} 分鐘</span><h2 style="margin:0">${SK[skill]}</h2><span style="flex:1"></span><a href="#" id="swap" class="small">換一個</a></div>${body}</div><p class="small"><a href="#" id="quit">← 今天先這樣</a></p></div>${up?'<div class="card padwrap" id="padHost"></div>':''}</div>`;
+ $('#swap').onclick=x=>{x.preventDefault();run(pick(e,skill),e)};$('#quit').onclick=x=>{x.preventDefault();tonight()};
+ if(up)pad($('#padHost'));
+}
+function run(skill,e){stopCd();({look,hand,size,calc,read,card})[skill](e)}
+function finish(skill,e,min,msg){
+ stopCd();clearDraw();logDay(min,skill);const s=streak();
+ app.innerHTML=`<div class="narrow"><div class="card" style="text-align:center"><div style="font-size:44px;color:var(--ok)">✓</div><h2 style="font-size:20px">今天有做，就是有做。</h2>
+  <p>${msg||''}</p><p>連續 <b style="font-size:22px">${s}</b> 天。</p>
+  <div class="col"><button class="pri big" id="rest">夠了，去休息</button><button id="more">還有力氣，再來一個</button></div></div></div>`;
+ $('#rest').onclick=tonight;$('#more').onclick=()=>run(pick(e,skill),e);
+}
+/* 3 分鐘：看一張好圖（本機有你的圖庫；網頁版改看歷屆原題的基地圖） */
+let noImg=!LOCAL;
+const SITEQ=['翻到基地圖：北在哪？最寬的路在哪一側？','翻到基地圖：基地最長的邊幾公尺？隔壁是什麼？','翻到基地圖：如果只能開一個主入口，你開哪一側？為什麼？','只看圖說要求那一段：要交幾張圖？比例各是多少？'];
+function look(e){
+ if(noImg){const q=P(Q.filter(k=>PAGES[k.id]));
+  shell('look',e,`<p><b>${q.y} 年｜${esc(q.t)}</b></p><p><b>${P(SITEQ)}</b></p>${qview(q,true)}<p class="mut small">不用寫、不用畫，看完在心裡回答就好。</p><button class="pri big" id="ok">看完了</button>`,false,true);
+  $('#ok').onclick=()=>finish('look',e,3,'讀基地圖的速度，就是考場前 20 分鐘的速度。');return}
+ const dir=P(Object.keys(IMG)),f=P(IMG[dir]);
+ shell('look',e,`<p><b>${P(LOOKQ)}</b></p><div class="zoomable"><img class="shot" id="lk" src="${esc(dir)}/${esc(f)}" alt="參考圖面"></div><p class="mut small">點圖可放大。不用記、不用寫，看就好。</p><button class="pri big" id="ok">看完了</button>`,false,true);
+ $('#lk').onerror=()=>{noImg=true;look(e)};
+ $('#ok').onclick=()=>finish('look',e,3,'看得多，手才知道要畫成什麼樣子。');
+}
+/* 3 或 10 分鐘：手感 */
+function hand(e){
+ const n=e===3?1:3;const list=[];for(let i=0;i<n;i++)list.push(HAND[(D.handI+i)%HAND.length]);
+ shell('hand',e,`<p class="mut">${padOn()?'直接畫在旁邊的畫板上，或拿張廢紙。':'拿一張廢紙和一支筆就好。'}</p><ol>${list.map(x=>`<li style="margin-bottom:8px"><b>${esc(x)}</b></li>`).join('')}</ol><div class="clock" id="cdn" style="font-size:40px"></div><button class="pri big" id="ok">畫完了</button>`,true);
+ countdown(e*60,$('#cdn'));$('#ok').onclick=()=>{D.handI+=n;saveD();finish('hand',e,e,'這些小東西考場上要畫幾十次，現在省下的每一秒都算數。')};
+}
+/* 3 分鐘：尺寸感，忘記的會更常出現 */
+function size(e){
+ const idx=FLASH.map((_,i)=>i),pool=[];while(pool.length<5&&idx.length){const ws=idx.map(i=>1+2*(D.flash[i]||0));let r=Math.random()*ws.reduce((a,b)=>a+b,0),k=0;for(;k<idx.length;k++){r-=ws[k];if(r<=0)break}pool.push(idx.splice(Math.min(k,idx.length-1),1)[0])}
+ let n=0,ok=0;
+ const step=()=>{if(n>=pool.length){finish('size',e,3,`5 張記得 ${ok} 張。忘記的之後會更常出現。`);return}const i=pool[n],c=FLASH[i];
+  shell('size',e,`<p class="mut small">${n+1}／${pool.length}</p><p style="font-size:19px"><b>${esc(c[0])}</b></p><div id="ans"><button class="pri big" id="show">看答案</button></div>`);
+  $('#show').onclick=()=>{$('#ans').innerHTML=`<div class="out"><b style="font-size:18px">${esc(c[1])}</b><br><span class="mut">${esc(c[2])}</span></div><div class="row" style="margin-top:12px"><button class="pri big" id="y">記得</button><button class="big" id="nn">忘了</button></div>`;
+   $('#y').onclick=()=>{ok++;D.flash[i]=Math.max(0,(D.flash[i]||0)-1);saveD();n++;step()};$('#nn').onclick=()=>{D.flash[i]=(D.flash[i]||0)+1;saveD();n++;step()}}};
+ step();
+}
+/* 10 分鐘：量體快算，答對多會升級 */
+function calc(e){
+ let n=0,ok=0;const t0=Date.now();
+ const step=()=>{if(n>=5){const sec=Math.round((Date.now()-t0)/1000);let m=`5 題對 ${ok} 題，用了 ${fmt(sec)}。`;
+   if(ok>=4&&D.calcLv<3){D.calcLv++;m+=` 升到 Lv.${D.calcLv}，下次題目會難一點。`}else if(ok<=2&&D.calcLv>1){D.calcLv--;m+=` 先回到 Lv.${D.calcLv} 把基本的算熟。`}saveD();finish('calc',e,Math.max(3,sec/60),m);return}
+  const c=genCalc(D.calcLv);
+  shell('calc',e,`<p class="mut small">第 ${n+1}／5 題　Lv.${D.calcLv}　考場常禁用計算器，請用紙筆。</p><p style="font-size:19px"><b>${esc(c.q)}</b></p><div class="row"><input type="number" step="any" id="in" style="width:160px;font-size:20px" autofocus><button class="pri big" id="go">送出</button></div><div id="fb"></div>`,true);
+  const go=()=>{const v=$('#in').value;if(v==='')return;const right=Math.abs(+v-c.a)<=Math.max(.5,c.a*.002);if(right)ok++;n++;
+   $('#go').disabled=true;$('#in').disabled=true;$('#fb').innerHTML=`<div class="out"><span class="tag ${right?'ok':'bad'}">${right?'對':'不對'}</span> 答案 <b>${num(c.a,2)}</b><br><span class="mut">${esc(c.h)}</span></div><div class="row" style="margin-top:12px"><button class="pri big" id="nx">${n>=5?'看結果':'下一題'}</button></div>`;$('#nx').onclick=step;$('#nx').focus()};
+  $('#go').onclick=go;$('#in').onkeydown=x=>{if(x.key==='Enter')go()};$('#in').focus()};
+ step();
+}
+/* 10 分鐘：讀題抓限制 */
+function read(e){
+ const pool=Q.filter(q=>D.reads[q.id]==null),q=P(pool.length?pool:Q),hard=q.hard.filter(x=>!x.startsWith('（建議'));
+ shell('read',e,`<p><b>${q.y} 年｜${esc(q.t)}</b></p><p>讀原題，5 分鐘內寫下你覺得「絕對不能違反」的 3–5 條（紙上、心裡都可以）。然後對答案。</p>
+  <div id="st"><button class="pri big" id="go">開始 5 分鐘</button></div>${qview(q,true)}`,false,true);
+ $('#go').onclick=()=>{$('#st').innerHTML=`<div class="clock" id="cdn" style="font-size:40px"></div><button class="pri big" id="chk">寫好了，對答案</button>`;countdown(300,$('#cdn'));
+  $('#chk').onclick=()=>{stopCd();const d=app.querySelector('.qv');if(d)d.open=false;$('#st').innerHTML=`<h3>這題的硬限制（有抓到的打勾）</h3>${hard.map(x=>`<label class="chk"><input type="checkbox" class="hc"><span>${esc(x)}</span></label>`).join('')}<div class="row" style="margin-top:12px"><button class="pri big" id="fin">完成</button></div>`;
+   $('#fin').onclick=()=>{const c=app.querySelectorAll('.hc:checked').length;D.reads[q.id]=c/hard.length;saveD();finish('read',e,7,`${hard.length} 條抓到 ${c} 條。${c<hard.length?'漏掉的那幾條，就是考場上會被扣分的地方。':'全中。'}`)}}};
+}
+/* 10 分鐘：一張小圖（手繪少的人給 15 分鐘） */
+function card(e){
+ const todo=CARDS.map((c,i)=>i).filter(i=>D.cards[i]==null),weak=CARDS.map((c,i)=>i).filter(i=>D.cards[i]===0);
+ const i=P(todo.length?todo:weak.length?weak:CARDS.map((c,k)=>k)),c=CARDS[i],q=findQ(c[0]),mins=D.prof&&D.prof.draw===0?15:10;
+ shell('card',e,`<p><b>${c[0]} 年｜${esc(c[1])}</b></p><p class="mut small">${esc(q.site)}</p>
+  <div class="out"><b>問題：</b>${esc(c[2])}<br><b>只畫這個：</b>${esc(c[3])}</div>
+  <p class="mut small">${padOn()?'畫在旁邊的畫板，或 A4 一張。':'A4 一張、一支筆。'}不用漂亮，${mins} 分鐘到就停。</p>
+  <div id="st"><button class="pri big" id="go">開始 ${mins} 分鐘</button></div>${qview(q)}`,true);
+ $('#go').onclick=()=>{$('#st').innerHTML=`<div class="clock" id="cdn" style="font-size:40px"></div><button class="pri big" id="dn">畫好了</button>`;countdown(mins*60,$('#cdn'));
+  $('#dn').onclick=()=>{stopCd();$('#st').innerHTML=`<div class="out"><b>合格的樣子：</b>${esc(c[5])}<br><b>如果情況變成這樣，你的圖還成立嗎？</b>${esc(c[4])}</div><h3>老實說，你的圖：</h3><div class="col"><button class="opt" data-s="0">沒畫出來／答非所問</button><button class="opt" data-s="1">有回答，但圖上看不太出來</button><button class="opt" data-s="2">圖上指得出來</button></div>`;
+   app.querySelectorAll('#st .opt').forEach(b=>b.onclick=()=>{const s=+b.dataset.s;D.cards[i]=s;saveD();finish('card',e,mins,s===0?'這張之後會再出現一次。第二次通常就會了。':s===1?'差一步：下次先想「我要讓人在圖上看到什麼」再下筆。':'這張過了。想要有人幫你看圖，截圖或拍照丟給 Claude。')})}};
+}
+
+$('#navTonight').onclick=tonight;$('#navHome').onclick=home;$('#navHist').onclick=history_;
+window.addEventListener('beforeunload',e=>{if(act&&!act.pauseAt){e.preventDefault();e.returnValue=''}});
+if(act)exam();else tonight();
+</script>
+
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+</body>
+</html>
