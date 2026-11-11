@@ -558,13 +558,30 @@ function genCalc(lv){
  const o=P(T)();o.a=Math.round(o.a*100)/100;return o}
 
 /* ---------- 畫面 ---------- */
+/* 釘選說明：只在網址開啟（非已釘選的 App、非本機檔案）時出現，可收起，也可從首頁底部再叫出來 */
+function pinable(){try{return /^https?:/.test(location.protocol)&&!(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches))}catch(e){return false}}
+function pinCard(){if(!pinable()||D.pinHide)return '';
+ return `<div class="card" id="pinCard"><h2 style="font-size:18px">先把它釘在 iPad 主畫面（30 秒）</h2>
+  <p class="mut small">釘好之後，它像一般 App 一樣全螢幕開啟，不用打網址，沒有網路也能用，畫板也不會被瀏覽器的工具列擋到。</p>
+  <ol class="small" style="margin:6px 0 6px 20px;padding:0;line-height:1.9">
+   <li>請用 <b>Safari</b> 開這個網址（Chrome 在 iPad 上也行，但步驟略有不同）。</li>
+   <li>點網址列旁的 <b>分享鈕</b>（方框加向上箭頭 ⬆）。</li>
+   <li>往下找到 <b>「加入主畫面」</b>，點它。</li>
+   <li>名稱保留「術科考場」，按右上 <b>「加入」</b>。</li>
+   <li>回到主畫面，點新出現的白色鉛筆圖示開啟。以後都從這個圖示進來。</li>
+  </ol>
+  <p class="mut small">找不到「加入主畫面」：在分享選單最下面按「編輯動作」，或往下捲。Safari 的分享鈕在 iPadOS 18 以前可能在網址列右側，之後在右上角。</p>
+  <p class="mut small">注意：每個開啟方式的紀錄是分開的。釘好之後請只用主畫面圖示做題，紀錄才會集中在同一處。</p>
+  <div class="row"><button id="pinOk">我釘好了／先不用</button></div></div>`}
+function bindPin(){const b=$('#pinOk');if(b)b.onclick=()=>{D.pinHide=1;saveD();tonight()}}
 function onboard(){
  stopTick();stopCd();clearDraw();const ans=D.prof?[D.prof.draw,D.prof.exp,D.prof.stuck]:[null,null,null];
- const draw=()=>{app.innerHTML=`<div class="narrow"><div class="card"><h2>先認識你，三題</h2>
+ const draw=()=>{app.innerHTML=`<div class="narrow">${pinCard()}<div class="card"><h2>先認識你，三題</h2>
   <p class="mut">每個人底子不一樣。回答完，每天給你的小事會照你的狀況配，之後也會依你做的結果自己調整。</p>
   ${PROFQ.map((q,i)=>`<h3>${q[0]}</h3><div class="col">${q[1].map((o,k)=>`<button class="opt ${ans[i]===k?'on':''}" data-i="${i}" data-k="${k}">${o}</button>`).join('')}</div>`).join('')}
   <div class="row" style="margin-top:16px"><button class="pri big" id="pfOk" ${ans.includes(null)?'disabled':''}>好了</button></div></div></div>`;
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ans[+b.dataset.i]=+b.dataset.k;draw()});
+  const pk=$('#pinOk');if(pk)pk.onclick=()=>{D.pinHide=1;saveD();draw()};
   $('#pfOk').onclick=()=>{const first=!D.prof;D.prof={draw:ans[0],exp:ans[1],stuck:ans[2]};if(first)D.calcLv=ans[1]===0?1:2;saveD();tonight()}};
  draw();
 }
@@ -576,6 +593,7 @@ function tonight(){
  const dots=[];const d0=new Date();for(let i=27;i>=0;i--){const d=new Date(d0);d.setDate(d.getDate()-i);dots.push(`<i class="${D.days[dstr(d)]?'on':''}" title="${dstr(d)}"></i>`)}
  const cardN=Object.keys(D.cards).length,readN=Object.keys(D.reads).length,total=Object.values(D.days).reduce((a,b)=>a+b,0);
  app.innerHTML=`<div class="narrow">
+ ${pinCard()}
  <div class="card"><h2 style="font-size:20px">${hi}。</h2>
   ${doneMin?`<p><span class="tag ok">今天已完成 ${doneMin} 分鐘</span> 可以收工了。還想做再選。</p>`:'<p>今天多累？選一個就好，剩下的我來決定。</p>'}
   <div class="col">
@@ -587,7 +605,8 @@ function tonight(){
   <div class="dots">${dots.join('')}</div>
   <p class="mut small">每週可以休息 2 天不斷鏈。3 分鐘也算一天。累計 ${total} 分鐘。</p>
   <div class="small">小圖 <b>${cardN}</b>／${CARDS.length}　讀題 <b>${readN}</b>／${Q.length}　量體快算 <b>Lv.${D.calcLv}</b></div>
-  <p class="small"><a href="#" id="tgPad">螢幕畫板：${padOn()?'開':'關'}</a>　<a href="#" id="rePf">改我的背景</a>${D.exam?'　<a href="#" id="setExam">改考試日</a>':''}</p></div></div>`;
+  <p class="small"><a href="#" id="tgPad">螢幕畫板：${padOn()?'開':'關'}</a>　<a href="#" id="rePf">改我的背景</a>${D.exam?'　<a href="#" id="setExam">改考試日</a>':''}${pinable()&&D.pinHide?'　<a href="#" id="pinAgain">如何加入主畫面</a>':''}</p></div></div>`;
+ bindPin();const pa=$('#pinAgain');if(pa)pa.onclick=e=>{e.preventDefault();D.pinHide=0;saveD();tonight()};
  app.querySelectorAll('.energy').forEach(b=>b.onclick=()=>{const e=+b.dataset.e;if(e===60)strong();else run(pick(e),e)});
  $('#rePf').onclick=e=>{e.preventDefault();onboard()};
  $('#tgPad').onclick=e=>{e.preventDefault();D.pad=!padOn();saveD();tonight()};
